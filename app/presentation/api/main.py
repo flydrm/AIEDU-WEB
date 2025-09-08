@@ -3,6 +3,7 @@
 Adds:
 - CORS policy (development-friendly, can be tightened in prod)
 - Trace-Id middleware with request duration metrics
+- Structured JSON logs via structlog (request.start / request.end)
 - Generic exception handler with trace propagation
 - DI of providers and use cases, plus dataset preload
 """
@@ -16,10 +17,27 @@ import json
 import time
 from app.presentation.api.metrics import record_request_metrics
 from fastapi.middleware.cors import CORSMiddleware
+import logging
+import structlog
 
 
 def create_app() -> FastAPI:
     app = FastAPI(title="Kids AI App", version="0.1.0")
+
+    # Configure structlog for JSON logs
+    logging.basicConfig(level=logging.INFO)
+    structlog.configure(
+        processors=[
+            structlog.processors.TimeStamper(fmt="iso", key="ts"),
+            structlog.processors.add_log_level,
+            structlog.processors.StackInfoRenderer(),
+            structlog.processors.format_exc_info,
+            structlog.processors.JSONRenderer(),
+        ],
+        wrapper_class=structlog.make_filtering_bound_logger(logging.INFO),
+        cache_logger_on_first_use=True,
+    )
+    logger = structlog.get_logger("api")
 
     @app.get("/health")
     async def health():
@@ -37,8 +55,7 @@ def create_app() -> FastAPI:
     async def add_trace_id(request: Request, call_next):
         trace_id = request.headers.get("X-Trace-Id") or "trace-" + str(id(request))
         start = time.perf_counter()
-        # structured log (stdout)
-        print({"ts": "", "path": request.url.path, "method": request.method, "trace_id": trace_id})
+        logger.info("request.start", path=request.url.path, method=request.method, trace_id=trace_id)
         response = await call_next(request)
         duration = time.perf_counter() - start
         response.headers["X-Trace-Id"] = trace_id
@@ -46,6 +63,14 @@ def create_app() -> FastAPI:
             record_request_metrics(request.url.path, request.method, response.status_code, duration)
         except Exception:
             pass
+        logger.info(
+            "request.end",
+            path=request.url.path,
+            method=request.method,
+            status=response.status_code,
+            duration_ms=int(duration * 1000),
+            trace_id=trace_id,
+        )
         return response
 
     @app.exception_handler(Exception)

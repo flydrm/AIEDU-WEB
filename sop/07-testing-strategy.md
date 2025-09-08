@@ -137,6 +137,24 @@ test('首页加载并显示导航', async ({ page }) => {
   await expect(page.getByText('首页')).toBeVisible();
 });
 ```
+### 2.2 跨视口/设备测试
+```ts
+import { test } from '@playwright/test';
+
+const viewports = [
+  { width: 375, height: 667 },   // iPhone 8
+  { width: 768, height: 1024 },  // iPad
+  { width: 1280, height: 800 },  // Laptop
+];
+
+for (const viewport of viewports) {
+  test(`responsive layout @${viewport.width}x${viewport.height}`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await page.goto('http://localhost:3000/stories');
+    // 断言关键模块在各断点均可见/不重叠
+  });
+}
+```
 
 ### 2.2 测试ID最佳实践
 ```text

@@ -1,0 +1,99 @@
+{
+  "version": "1.0",
+  "locale": "zh-CN",
+  "age_mode": "3yo",
+  "knowledge_cards": [
+    {"id":"KC-RED-01","category":"红色","title":"什么是红色","lines":["红色像苹果","红色像小车","红色亮亮的"],"question":"找一个红色东西，说给我听。","image_prompt":"儿童简笔插画, 红色主题物体, 大形状, 暖色, 无文字, 安全","tags":["颜色","观察","动作"]},
+    {"id":"KC-RED-02","category":"红色","title":"红在自然里","lines":["落日红红","花朵红红","秋叶红红"],"question":"指一指图里红色的地方。","image_prompt":"儿童风景插画, 红花/红叶, 对比柔和, 无尖锐细节","tags":["颜色","自然"]},
+    {"id":"KC-RED-03","category":"红色","title":"红色让人醒","lines":["红色很显眼","红色很热闹","红色易看到"],"question":"说说哪里需要用红色让人看到？","image_prompt":"安全提示类插画, 红色强调, 简洁图形","tags":["颜色","安全"]},
+    {"id":"KC-RED-04","category":"红色","title":"红与其他色","lines":["红配白亮","红配黑稳","红配黄暖"],"question":"挑两种颜色，画一画搭配。","image_prompt":"色块搭配卡片, 红/白/黑/黄, 大块色面","tags":["颜色","搭配","美感"]},
+    {"id":"KC-RED-05","category":"红色","title":"红色在哪里见","lines":["红灯要停","红包喜庆","红心代表爱"],"question":"说一个你见过的红色标志。","image_prompt":"日常红色物件集合, 信号灯/红包/红心","tags":["颜色","生活"]},
+    {"id":"KC-RED-06","category":"红色","title":"红色小挑战","lines":["屋里找红","数一数数","一共几个呢"],"question":"数一数今天看到的红色有几样。","image_prompt":"室内儿童安全插画, 多个红色物体, 清晰","tags":["颜色","数数","动作"]},
+
+    {"id":"KC-MAG-01","category":"磁力片","title":"磁力片会吸","lines":["磁片能吸住","铁会被吸","木头不行哦"],"question":"说说家里什么会被吸？","image_prompt":"儿童科普插画, 磁片吸铁钉, 明确对比, 安全","tags":["科学常识","材料"]},
+    {"id":"KC-MAG-02","category":"磁力片","title":"形状真有趣","lines":["有正方形","也有三角","还能拼小门"],"question":"拿出两块，拼成一个门吧！","image_prompt":"磁力片形状拼搭, 大形状, 清边线","tags":["形状","拼搭"]},
+    {"id":"KC-MAG-03","category":"磁力片","title":"吸住的方向","lines":["这边会吸","那边会推","换面再试试"],"question":"把两块换个方向再试试看。","image_prompt":"磁极示意, 一个吸一个推, 友好箭头","tags":["科学常识","探索"]},
+    {"id":"KC-MAG-04","category":"磁力片","title":"安全要牢记","lines":["小片别入口","别靠小电器","玩完收起来"],"question":"把玩具收进盒子里，好吗？","image_prompt":"安全提示插画, 收纳盒, 孩子远离口鼻","tags":["安全","习惯"]},
+    {"id":"KC-MAG-05","category":"磁力片","title":"搭一面墙","lines":["底要平整","一块挨一块","慢慢往上搭"],"question":"试着搭一面小墙，轻轻碰，会不会倒？","image_prompt":"磁力片平面墙, 少量块, 稳固","tags":["拼搭","稳定"]},
+    {"id":"KC-MAG-06","category":"磁力片","title":"做个小窗","lines":["两块做门","三角做屋顶","留个小窗户"],"question":"搭个有窗的小房子给我看！","image_prompt":"磁力片小屋, 有门窗, 童趣风","tags":["拼搭","创造"]},
+
+    {"id":"KC-BLK-01","category":"积木","title":"积木更稳","lines":["底要大些","上面小些","不容易倒"],"question":"搭一座小塔，底下放四块。","image_prompt":"积木稳固塔, 底大上小, 大形状","tags":["结构","稳定"]},
+    {"id":"KC-BLK-02","category":"积木","title":"长短来搭","lines":["长块做桥","短块做脚","桥就立起来"],"question":"搭一座小桥，让小车过。","image_prompt":"积木小桥, 简单支撑, 童趣","tags":["结构","想象"]},
+    {"id":"KC-BLK-03","category":"积木","title":"形状认朋友","lines":["方块像窗","圆柱像柱","三角像屋顶"],"question":"找一块三角，放到屋顶上。","image_prompt":"积木屋顶三角, 对位清晰","tags":["形状","配对"]},
+    {"id":"KC-BLK-04","category":"积木","title":"搭路与城","lines":["路要直直","城要方方","门口留个洞"],"question":"铺一条路，让小车能进城。","image_prompt":"积木道路与城门, 明确入口","tags":["空间","规划"]},
+    {"id":"KC-BLK-05","category":"积木","title":"比一比高","lines":["小塔不高","大塔更高","别让它倒"],"question":"搭两座塔，比比谁更高。","image_prompt":"两座积木塔, 高矮对比","tags":["比较","数感"]},
+    {"id":"KC-BLK-06","category":"积木","title":"安全小提醒","lines":["不往外丢","不踩尖角","收好不乱放"],"question":"把散落的积木装回盒里。","image_prompt":"收纳场景, 安全友好","tags":["安全","习惯"]},
+
+    {"id":"KC-MUS-01","category":"音乐","title":"快与慢","lines":["快像小跑","慢像散步","一起打拍"],"question":"跟我一起：拍手慢慢两下。","image_prompt":"儿童音乐节奏插画, 拍手动作, 简洁","tags":["节奏","动作"]},
+    {"id":"KC-MUS-02","category":"音乐","title":"大与小声","lines":["大声像雷","小声像风","听得更清"],"question":"先小声拍手，再大声拍手。","image_prompt":"音量大小示意, 表情柔和","tags":["音量","对比"]},
+    {"id":"KC-MUS-03","category":"音乐","title":"敲一敲鼓","lines":["鼓咚咚响","轻敲不吵","重敲更大"],"question":"用手心轻轻敲桌面两下。","image_prompt":"小鼓或替代物, 安全演示","tags":["打击","控制力"]},
+    {"id":"KC-MUS-04","category":"音乐","title":"快慢小游戏","lines":["我说快快","你快拍手","我说慢慢"],"question":"听口令快慢拍手各两下。","image_prompt":"亲子节奏游戏, 微笑表情","tags":["节奏","互动"]},
+    {"id":"KC-MUS-05","category":"音乐","title":"声音来自哪","lines":["嘴能发声","手能拍声","物会出声"],"question":"说出身边三个会出声的东西。","image_prompt":"多来源声源图, 图标化","tags":["识别","观察"]},
+    {"id":"KC-MUS-06","category":"音乐","title":"听与停","lines":["音乐响起","你来拍手","音乐停下"],"question":"音乐停时不动，小雕像！","image_prompt":"音乐停止游戏, 动静对比","tags":["注意力","控制"]},
+
+    {"id":"KC-CRG-01","category":"勇敢","title":"我先深呼吸","lines":["遇到新东西","先深呼吸","慢慢来就好"],"question":"一起吸一口气，呼一口气。","image_prompt":"儿童做深呼吸简笔插画, 安全, 暖色","tags":["勇敢","情绪调节","动作"]},
+    {"id":"KC-CRG-02","category":"勇敢","title":"我试一试","lines":["小手试试看","不会也没关系","再来一次"],"question":"今天想试什么新玩法？","image_prompt":"孩子尝试新玩具, 鼓励表情, 简洁","tags":["勇敢","自我效能"]},
+    {"id":"KC-CRG-03","category":"勇敢","title":"自己穿鞋","lines":["先穿一只","再穿另一只","拉拉鞋带"],"question":"现在先穿哪一只好？","image_prompt":"儿童自己穿鞋的步骤插画, 清晰步骤","tags":["独立","步骤","勇敢"]},
+    {"id":"KC-CRG-04","category":"勇敢","title":"摔倒爬起来","lines":["轻轻拍拍灰","慢慢站起来","我们再试一次"],"question":"摔倒后你做了什么？","image_prompt":"儿童摔倒后站起, 温柔安全","tags":["勇敢","复原力","安全"]},
+
+    {"id":"KC-LOG-01","category":"逻辑","title":"把红色放一起","lines":["看颜色","红色放红色","分好更清楚"],"question":"把红色积木放到一起吧。","image_prompt":"按颜色分类的积木, 红色突出","tags":["逻辑","分类","颜色"]},
+    {"id":"KC-LOG-02","category":"逻辑","title":"大小排一排","lines":["大的在前","小的在后","从大到小"],"question":"把三个积木从大到小排好。","image_prompt":"大小对比明显的积木, 排序清晰","tags":["逻辑","排序","比较"]},
+    {"id":"KC-LOG-03","category":"逻辑","title":"找一找一样","lines":["看看形状","一样的做朋友","放在一起"],"question":"找两块一样的形状。","image_prompt":"形状配对卡, 方/圆/三角, 大形状","tags":["逻辑","配对","形状"]},
+    {"id":"KC-LOG-04","category":"逻辑","title":"先做这个再做那个","lines":["先拍手两下","再坐下","一步一步来"],"question":"先做什么？再做什么？","image_prompt":"两步指令图标化, 简单箭头","tags":["逻辑","顺序","指令"]},
+
+    {"id":"KC-MOM-01","category":"爱妈妈","title":"谢谢妈妈","lines":["妈妈做早饭","我说谢谢你","给个笑脸"],"question":"现在对妈妈说什么？","image_prompt":"亲子互动微笑插画, 温暖","tags":["亲子","礼貌","情感"]},
+    {"id":"KC-MOM-02","category":"爱妈妈","title":"小帮手","lines":["拿一条小毛巾","递给妈妈","真能干"],"question":"去帮妈妈拿一样小东西吧。","image_prompt":"孩子递毛巾给妈妈, 安全温柔","tags":["亲子","助人","动作"]},
+    {"id":"KC-MOM-03","category":"爱妈妈","title":"抱抱妈妈","lines":["张开手臂","轻轻拥抱","我爱妈妈"],"question":"给妈妈一个抱抱好吗？","image_prompt":"亲子拥抱, 柔和色彩","tags":["亲子","依恋","情感"]},
+    {"id":"KC-MOM-04","category":"爱妈妈","title":"画个红心心","lines":["拿出红色","画个大爱心","送给妈妈"],"question":"把爱心给谁？","image_prompt":"儿童红色爱心简笔画, 无文字","tags":["亲子","表达","创作"]},
+
+    {"id":"KC-DAD-01","category":"爱爸爸","title":"谢谢爸爸","lines":["爸爸帮我","我说谢谢你","笑一笑"],"question":"现在对爸爸说什么？","image_prompt":"孩子对爸爸说谢谢, 微笑, 暖色","tags":["亲子","礼貌","情感"]},
+    {"id":"KC-DAD-02","category":"爱爸爸","title":"给爸爸一个抱抱","lines":["张开手臂","轻轻拥抱","我爱爸爸"],"question":"给爸爸一个抱抱好吗？","image_prompt":"亲子拥抱, 安全距离, 柔和","tags":["亲子","依恋","动作"]},
+    {"id":"KC-DAD-03","category":"爱爸爸","title":"小帮手递东西","lines":["双手拿稳","慢慢走","递给爸爸"],"question":"帮爸爸递一条小毛巾吧。","image_prompt":"孩子双手递物, 爸爸接过, 安全","tags":["助人","动作","安全"]},
+    {"id":"KC-DAD-04","category":"爱爸爸","title":"和爸爸一起收玩具","lines":["玩具回家","放进盒子","一起完成"],"question":"把三样玩具放回盒里。","image_prompt":"亲子收纳, 篮筐, 整洁","tags":["习惯","合作","秩序"]},
+
+    {"id":"KC-GP-01","category":"爱爷爷奶奶","title":"早上问声好","lines":["见到爷爷","见到奶奶","说早上好"],"question":"我们一起说一声早上好。","image_prompt":"孩子向老人问好, 微笑, 温暖家庭","tags":["礼貌","亲情","表达"]},
+    {"id":"KC-GP-02","category":"爱爷爷奶奶","title":"讲今天的小事","lines":["我吃了饭","我搭了塔","和他们分享"],"question":"选一件小事说给爷爷奶奶听。","image_prompt":"孩子分享日常, 老人倾听, 柔和","tags":["沟通","表达","亲情"]},
+    {"id":"KC-GP-03","category":"爱爷爷奶奶","title":"轻轻捶捶背","lines":["问好不好","轻轻敲两下","舒服不疼"],"question":"先问一声“可以吗？”再开始。","image_prompt":"孩子轻捶背, 手势轻柔, 安全提示","tags":["助人","动作","安全"]},
+    {"id":"KC-GP-04","category":"爱爷爷奶奶","title":"翻相册认亲","lines":["翻翻相册","说说名字","记住家人"],"question":"认一认照片里的谁？","image_prompt":"家庭相册, 大图大脸, 亲切","tags":["认知","亲情","记忆"]},
+
+    {"id":"KC-FAM-01","category":"爱家人","title":"画个红色爱心","lines":["拿起红色","画个大爱心","送给家人"],"question":"把爱心送给谁？","image_prompt":"儿童红色爱心简笔画, 无文字","tags":["表达","创作","情感"]},
+    {"id":"KC-FAM-02","category":"爱家人","title":"全家合影笑一笑","lines":["站成一排","笑一笑","咔嚓一张"],"question":"笑脸准备好了吗？","image_prompt":"家庭合影, 微笑, 明亮背景","tags":["亲情","互动","快乐"]}
+  ],
+  "story_prompts": [
+    {"id":"SP-RED-01","category":"红色","title":"红方块去散步","prompt":"你是中文幼儿讲故事老师。为3岁小朋友写一个关于“红色小方块散步”的温柔故事，共3段，每段2-3句。第2段加入动作指令“拍拍手两下”。全程用短句、暖词、无恐吓/评判，句尾友好。故事结束后，给1个简单理解问题。","segments":3,"action_in_segment2":"拍拍手两下","comprehension_question":"红色小方块看到了什么？","image_prompt":"红色小方块在公园简笔插画, 暖色, 无文字"},
+    {"id":"SP-RED-02","category":"红色","title":"红气球和小车","prompt":"写一个3段故事：主角是红气球和红小车。每段2-3句，第2段加入“挥挥手两下”。语言超简，适合3岁。结尾给1个理解问题。","segments":3,"action_in_segment2":"挥挥手两下","comprehension_question":"谁拉着气球？","image_prompt":"红气球与红小车并排, 童趣"},
+
+    {"id":"SP-MAG-01","category":"磁力片","title":"磁力片小城","prompt":"为3岁写3段故事：孩子用磁力片搭一座小城。每段2-3句，第2段加入“轻轻按一按”。用安全、鼓励的话，避免危险动作。结尾给1个理解问题。","segments":3,"action_in_segment2":"轻轻按一按","comprehension_question":"小城的门在哪里？","image_prompt":"磁力片城堡, 门窗清晰, 明快色彩"},
+    {"id":"SP-MAG-02","category":"磁力片","title":"会吸和会推","prompt":"3段短故事：孩子发现磁力片有一面会吸住，有一面会推开。第2段加入“换个方向试一试”。语言极简，给1个理解问题结尾。","segments":3,"action_in_segment2":"换个方向试一试","comprehension_question":"为什么要换个方向？","image_prompt":"磁片一吸一推的简图, 友好箭头"},
+
+    {"id":"SP-BLK-01","category":"积木","title":"小塔站得稳","prompt":"写3段故事：用积木搭小塔，底大上小更稳。第2段加入“慢慢数到二再放”。短句、无危险词，最后1个理解问题。","segments":3,"action_in_segment2":"慢慢数到二再放","comprehension_question":"怎样让小塔更稳？","image_prompt":"积木小塔, 底大上小, 简洁"},
+    {"id":"SP-BLK-02","category":"积木","title":"小桥让小车过","prompt":"3段故事：积木做桥，小车过桥。第2段加入“拍拍手一次，桥更稳”。短句、温柔语，结尾给1个问题。","segments":3,"action_in_segment2":"拍拍手一次","comprehension_question":"小桥要靠什么支撑？","image_prompt":"积木桥与小车, 稳固支撑"},
+
+    {"id":"SP-MUS-01","category":"音乐","title":"快快与慢慢","prompt":"3段节奏故事：先慢拍，再快拍。第2段加入“跟我拍手两下”。短句表达，结束给1个理解问题。","segments":3,"action_in_segment2":"拍手两下","comprehension_question":"快拍和慢拍有什么不同？","image_prompt":"儿童拍手节奏插画, 明确动作"},
+    {"id":"SP-MUS-02","category":"音乐","title":"小鼓咚咚响","prompt":"3段故事：孩子用手心轻轻敲小鼓。第2段加入“轻轻敲两下”。短句、温柔、无噪音词，结尾问1个问题。","segments":3,"action_in_segment2":"轻轻敲两下","comprehension_question":"用什么方式敲更合适？","image_prompt":"小鼓或桌面轻敲, 安全演示"},
+
+    {"id":"SP-MIX-01","category":"混合","title":"红屋顶的小房子","prompt":"3段故事：红色屋顶的积木小房子，门口挂一盏红灯。第2段加入“挥手两下打招呼”。短句，最后问1题。","segments":3,"action_in_segment2":"挥手两下","comprehension_question":"小房子的屋顶是什么颜色？","image_prompt":"红屋顶积木房, 童趣"},
+    {"id":"SP-MIX-02","category":"混合","title":"磁力片音乐会","prompt":"3段故事：用磁力片搭舞台，大家拍手打节奏。第2段加入“拍手两下跟节奏”。短句，结尾1个理解问题。","segments":3,"action_in_segment2":"拍手两下","comprehension_question":"舞台是用什么搭的？","image_prompt":"磁力片舞台, 简洁人群轮廓"},
+    {"id":"SP-MIX-03","category":"混合","title":"红色小队出发","prompt":"3段故事：红色方块、三角、圆柱一起去旅行。第2段加入“点点头两下”。短句，结尾1个问题。","segments":3,"action_in_segment2":"点点头两下","comprehension_question":"小队里都有哪些形状？","image_prompt":"红色几何朋友结伴, 童趣"},
+    {"id":"SP-MIX-04","category":"混合","title":"红气球的音乐会","prompt":"3段故事：红气球飘到小朋友身边，大家一起快慢拍。第2段加入“跟我慢慢拍两下”。短句，结尾1问题。","segments":3,"action_in_segment2":"慢慢拍两下","comprehension_question":"大家一起做了什么动作？","image_prompt":"红气球与孩子拍手, 明快"},
+
+    {"id":"SP-CRG-01","category":"勇敢","title":"小勇气的第一步","prompt":"为3岁小朋友写3段故事：主角遇到新玩具，先深呼吸，再慢慢试。每段2-3句，第2段加入“深呼吸一口气”。语言鼓励、无评判。结尾给1个理解问题。","segments":3,"action_in_segment2":"深呼吸一口气","comprehension_question":"他做了什么让自己更勇敢？","image_prompt":"孩子面对新玩具, 深呼吸的动作, 暖色"},
+    {"id":"SP-CRG-02","category":"勇敢","title":"新的滑梯","prompt":"3段故事：孩子想玩新滑梯，先握住栏杆，慢慢滑。第2段加入“握紧栏杆慢慢滑”。短句、强调安全。结尾给1个问题。","segments":3,"action_in_segment2":"握紧栏杆慢慢滑","comprehension_question":"谁在旁边陪着？","image_prompt":"滑梯场景, 家长陪伴, 安全姿势"},
+
+    {"id":"SP-LOG-01","category":"逻辑","title":"红色队排队","prompt":"3段故事：小朋友帮积木排队，红色站一起。第2段加入“把红色放一起”。短句，结尾1个理解问题。","segments":3,"action_in_segment2":"把红色放一起","comprehension_question":"哪些颜色站在一起？","image_prompt":"按颜色排队的积木, 红色突出"},
+    {"id":"SP-LOG-02","category":"逻辑","title":"先后小任务","prompt":"3段故事：先拍手两下，再坐下听音乐。第2段加入“先拍拍手，再坐下”。短句，结尾1个理解问题。","segments":3,"action_in_segment2":"先拍拍手，再坐下","comprehension_question":"先做了什么？","image_prompt":"两步动作图标化, 清楚箭头"},
+
+    {"id":"SP-MOM-01","category":"爱妈妈","title":"给妈妈的红心","prompt":"3段故事：孩子用红色画一颗心，送给妈妈。第2段加入“比一个爱心手势”。短句、温柔。结尾1个理解问题。","segments":3,"action_in_segment2":"比一个爱心手势","comprehension_question":"你把爱心送给了谁？","image_prompt":"孩子递红心给妈妈, 温暖场景"},
+    {"id":"SP-MOM-02","category":"爱妈妈","title":"小帮手送水","prompt":"3段故事：孩子给妈妈端一杯水，慢慢走更安全。第2段加入“慢慢端杯子走两步”。短句、强调安全。结尾1个问题。","segments":3,"action_in_segment2":"慢慢端杯子走两步","comprehension_question":"为什么要慢慢走？","image_prompt":"孩子双手端杯, 妈妈接水, 安全表情"},
+
+    {"id":"SP-DAD-01","category":"爱爸爸","title":"给爸爸的红色徽章","prompt":"3段故事：孩子用红色画一枚小徽章，别在爸爸胸前。第2段加入“比一个爱心手势”。语言短句、温柔、安全。结尾给1个理解问题。","segments":3,"action_in_segment2":"比一个爱心手势","comprehension_question":"小徽章是什么颜色？","image_prompt":"孩子给爸爸戴红色小徽章, 童趣"},
+    {"id":"SP-DAD-02","category":"爱爸爸","title":"和爸爸一起修小车","prompt":"3段故事：小车脏了，爸爸拿布擦，孩子递布帮忙。第2段加入“慢慢擦两下”。避免电器和锋利工具。结尾给1个理解问题。","segments":3,"action_in_segment2":"慢慢擦两下","comprehension_question":"孩子做了什么来帮忙？","image_prompt":"亲子擦拭玩具小车, 柔和安全"},
+
+    {"id":"SP-GP-01","category":"爱爷爷奶奶","title":"给奶奶唱一首歌","prompt":"3段故事：孩子唱一首慢慢的小歌给奶奶听。第2段加入“轻轻拍手两下”。语言简短、温柔。结尾1个理解问题。","segments":3,"action_in_segment2":"轻轻拍手两下","comprehension_question":"奶奶听到歌做了什么？","image_prompt":"孩子对奶奶唱歌, 亲切场景"},
+    {"id":"SP-GP-02","category":"爱爷爷奶奶","title":"讲红气球的故事给爷爷","prompt":"3段故事：孩子把红气球的故事讲给爷爷听。第2段加入“挥挥手两下像气球”。短句、温柔。结尾1个理解问题。","segments":3,"action_in_segment2":"挥挥手两下","comprehension_question":"故事里的气球是什么颜色？","image_prompt":"孩子和爷爷分享故事, 红气球元素"},
+
+    {"id":"SP-FAM-01","category":"爱家人","title":"全家拥抱成大圆圈","prompt":"3段故事：家人牵手围成圆圈，一起数一二三拥抱。第2段加入“轻轻拥抱一下”。语言安全、温暖。结尾1个理解问题。","segments":3,"action_in_segment2":"轻轻拥抱一下","comprehension_question":"大家围成了什么形状？","image_prompt":"全家围成圆圈拥抱, 温暖"},
+    {"id":"SP-FAM-02","category":"爱家人","title":"红色亲亲卡","prompt":"3段故事：孩子做一张红色亲亲卡，分别送给爸爸妈妈爷爷奶奶。第2段加入“轻轻亲一下脸颊”。短句、礼貌用语。结尾1个理解问题。","segments":3,"action_in_segment2":"轻轻亲一下","comprehension_question":"亲亲卡送给了谁？","image_prompt":"孩子把红色卡片送给家人, 童趣"}
+  ]
+}
+

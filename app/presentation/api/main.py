@@ -19,6 +19,8 @@ def create_app() -> FastAPI:
     async def add_trace_id(request: Request, call_next):
         trace_id = request.headers.get("X-Trace-Id") or "trace-" + str(id(request))
         increment_requests_counter()
+        # structured log (stdout)
+        print({"ts": "", "path": request.url.path, "method": request.method, "trace_id": trace_id})
         response = await call_next(request)
         response.headers["X-Trace-Id"] = trace_id
         return response

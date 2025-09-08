@@ -66,10 +66,11 @@ class OpenAICompatibleClient:
 
     Records Prometheus metrics for success and error outcomes.
     """
-    def __init__(self, base_url: str, api_key: str, timeout: float = 30.0) -> None:
+    def __init__(self, base_url: str, api_key: str, timeout: float = 30.0, provider_name: str | None = None) -> None:
         self.base_url = base_url.rstrip("/")
         self.api_key = api_key
         self.timeout = timeout
+        self.provider = provider_name or self.base_url
         self._client = httpx.AsyncClient(timeout=self.timeout)
 
     async def close(self) -> None:
@@ -89,38 +90,38 @@ class OpenAICompatibleClient:
             try:
                 resp = await self._client.post(url, json=payload, headers=headers)
                 if resp.status_code == 200:
-                    record_llm_success(self.base_url)
+                    record_llm_success(self.provider)
                     return resp.json()
                 if resp.status_code == 429:
                     if attempt < 2:
                         await asyncio.sleep(backoff)
                         backoff *= 2
                         continue
-                    record_llm_error(self.base_url, "429")
+                    record_llm_error(self.provider, "429")
                     raise RateLimitError("rate limited")
                 if 500 <= resp.status_code < 600:
                     if attempt < 2:
                         await asyncio.sleep(backoff)
                         backoff *= 2
                         continue
-                    record_llm_error(self.base_url, str(resp.status_code))
+                    record_llm_error(self.provider, str(resp.status_code))
                     raise ServerError(f"server error {resp.status_code}")
                 # 4xx other
-                record_llm_error(self.base_url, str(resp.status_code))
+                record_llm_error(self.provider, str(resp.status_code))
                 raise ServerError(f"unexpected status {resp.status_code}")
             except httpx.ReadTimeout:
                 if attempt < 2:
                     await asyncio.sleep(backoff)
                     backoff *= 2
                     continue
-                record_llm_error(self.base_url, "read_timeout")
+                record_llm_error(self.provider, "read_timeout")
                 raise TimeoutError("read timeout")
             except httpx.ConnectTimeout:
                 if attempt < 2:
                     await asyncio.sleep(backoff)
                     backoff *= 2
                     continue
-                record_llm_error(self.base_url, "connect_timeout")
+                record_llm_error(self.provider, "connect_timeout")
                 raise TimeoutError("connect timeout")
 
     async def stream_chat_completions(self, payload: dict[str, Any]):
@@ -136,7 +137,7 @@ class OpenAICompatibleClient:
             try:
                 async with self._client.stream("POST", url, json=payload, headers=headers) as resp:
                     if resp.status_code == 200:
-                        record_llm_success(self.base_url)
+                        record_llm_success(self.provider)
                         async for line in resp.aiter_lines():
                             if not line:
                                 continue
@@ -151,14 +152,14 @@ class OpenAICompatibleClient:
                             await asyncio.sleep(backoff)
                             backoff *= 2
                             continue
-                        record_llm_error(self.base_url, "429")
+                        record_llm_error(self.provider, "429")
                         raise RateLimitError("rate limited")
                     if 500 <= resp.status_code < 600:
                         if attempt < 2:
                             await asyncio.sleep(backoff)
                             backoff *= 2
                             continue
-                        record_llm_error(self.base_url, str(resp.status_code))
+                        record_llm_error(self.provider, str(resp.status_code))
                         raise ServerError(f"server error {resp.status_code}")
                     raise ServerError(f"unexpected status {resp.status_code}")
             except httpx.ReadTimeout:
@@ -166,14 +167,14 @@ class OpenAICompatibleClient:
                     await asyncio.sleep(backoff)
                     backoff *= 2
                     continue
-                record_llm_error(self.base_url, "read_timeout")
+                record_llm_error(self.provider, "read_timeout")
                 raise TimeoutError("read timeout")
             except httpx.ConnectTimeout:
                 if attempt < 2:
                     await asyncio.sleep(backoff)
                     backoff *= 2
                     continue
-                record_llm_error(self.base_url, "connect_timeout")
+                record_llm_error(self.provider, "connect_timeout")
                 raise TimeoutError("connect timeout")
 
 
@@ -191,6 +192,10 @@ class FailoverLLMRouter:
             CircuitBreaker(failure_threshold=breaker_failures or 3, cooldown_seconds=breaker_cooldown or 30)
             for _ in providers
         ]
+        self._clients = [
+            OpenAICompatibleClient(p["base_url"], p["api_key"], p.get("timeout", 30), provider_name=p.get("name") or p.get("base_url"))
+            for p in providers
+        ]
 
     async def chat_completions(self, payload: dict[str, Any]) -> dict[str, Any]:
         """Call providers in order until one succeeds or all fail."""
@@ -199,17 +204,16 @@ class FailoverLLMRouter:
             br = self._breakers[idx]
             if not br.allow():
                 continue
-            client = OpenAICompatibleClient(cfg["base_url"], cfg["api_key"], cfg.get("timeout", 30))
+            client = self._clients[idx]
             try:
                 result = await client.chat_completions(payload)
                 br.record_success()
-                await client.close()
                 return result
             except Exception as e:  # noqa: BLE001
                 last_err = e
                 br.record_failure()
             finally:
-                await client.close()
+                pass
         if last_err:
             raise last_err
         raise ServerError("no providers configured")
@@ -232,12 +236,11 @@ class FailoverLLMRouter:
             br = self._breakers[idx]
             if not br.allow():
                 continue
-            client = OpenAICompatibleClient(cfg["base_url"], cfg["api_key"], cfg.get("timeout", 30))
+            client = self._clients[idx]
             try:
                 async for chunk in client.stream_chat_completions(payload):
                     yield chunk
                 br.record_success()
-                await client.close()
                 return
             except Exception as e:  # noqa: BLE001
                 last_err = e
@@ -245,9 +248,9 @@ class FailoverLLMRouter:
                 # record failover when moving to next provider
                 next_idx = idx + 1
                 if next_idx < len(self._providers):
-                    record_llm_failover(self._providers[idx]["base_url"], self._providers[next_idx]["base_url"]) 
+                    record_llm_failover(self._providers[idx].get("name") or self._providers[idx]["base_url"], self._providers[next_idx].get("name") or self._providers[next_idx]["base_url"]) 
             finally:
-                await client.close()
+                pass
         if last_err:
             raise last_err
         raise ServerError("no providers configured")

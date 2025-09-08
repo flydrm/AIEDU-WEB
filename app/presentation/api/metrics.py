@@ -3,7 +3,8 @@
 Exposes /metrics and provides helper functions to record HTTP and LLM metrics.
 These counters/histograms enable fast troubleshooting and SLA/SLO monitoring.
 """
-from fastapi import APIRouter, Response
+from fastapi import APIRouter, Response, Request, HTTPException
+import os
 from prometheus_client import Counter, Histogram, CollectorRegistry, generate_latest, CONTENT_TYPE_LATEST
 
 
@@ -40,7 +41,14 @@ LLM_FAILOVER = Counter(
 
 
 @router.get("/metrics")
-async def metrics():
+async def metrics(request: Request):
+    # In non-prod environments, expose metrics without restriction to simplify tests/dev
+    if os.environ.get("APP_ENV", "dev") != "prod":
+        return Response(content=generate_latest(REGISTRY), media_type=CONTENT_TYPE_LATEST)
+    # Basic protection in prod: allow only localhost/internal proxies
+    client = request.client.host if request and request.client else ""
+    if client not in {"127.0.0.1", "::1", "localhost"}:
+        raise HTTPException(status_code=403, detail={"code": "FORBIDDEN", "message": "metrics restricted"})
     return Response(content=generate_latest(REGISTRY), media_type=CONTENT_TYPE_LATEST)
 
 

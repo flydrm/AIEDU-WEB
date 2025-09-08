@@ -15,6 +15,7 @@ from app.infrastructure.ai.clients import FailoverLLMRouter
 from app.application.use_cases.chat_completion import ChatCompletionUseCase
 import json
 import time
+import uuid
 from app.presentation.api.metrics import record_request_metrics
 from fastapi.middleware.cors import CORSMiddleware
 import logging
@@ -53,7 +54,7 @@ def create_app() -> FastAPI:
 
     @app.middleware("http")
     async def add_trace_id(request: Request, call_next):
-        trace_id = request.headers.get("X-Trace-Id") or "trace-" + str(id(request))
+        trace_id = request.headers.get("X-Trace-Id") or str(uuid.uuid4())
         start = time.perf_counter()
         logger.info("request.start", path=request.url.path, method=request.method, trace_id=trace_id)
         response = await call_next(request)

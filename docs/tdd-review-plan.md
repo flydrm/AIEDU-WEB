@@ -11,10 +11,11 @@
 
 ## 评审流程（60分钟）
 1) 回顾需求与验收（5min）
-2) OpenAPI 合同校对（10min）：字段/类型/必填/错误体
-3) 测试金字塔与覆盖清单（10min）
-4) 核心用例走查与边界（25min）
-5) 行动项与达成共识（10min）
+2) OpenAPI 合同校对（10min）：字段/类型/必填/错误体（含 SSE 错误帧）
+3) 前端方案A（卡片+底栏）快速走查（10min）：路由/组件/触达区/可达性
+4) 测试金字塔与覆盖清单（10min）：FE/E2E 加入关键路径
+5) 核心用例走查与边界（20min）：Chat 流式/微课/安全/家长面板
+6) 行动项与达成共识（5min）
 
 ## 测试金字塔（目标占比）
 - 单元 70%：用例/仓库/工具
@@ -67,6 +68,37 @@
   - 模拟：中途取消
   - 期望：服务端停止下游请求；无资源泄漏
 
+## 前端集成与E2E（UI 方案A）
+
+### 路由与页面
+- `/` 首页：今日推荐（两张知识卡 + 今日故事），快速入口（Chat/微课/安全）
+- `/chat` Chat：SSE 流式对话区（逐段追加），输入框，发送/停止/重试
+- `/lesson` 今日微课：2卡+1故事+1亲情+1逻辑；点读/播放/下一条
+- `/parent` 家长中心：TTS/夜间开关、指标摘要（时长/正确率/亲情打卡）
+- `/safety` 安全检查：文本输入→检测重写
+
+### E2E 关键路径（Playwright）
+- 首页加载
+  - 断言：顶部栏/今日推荐卡片可见；底部导航固定显示；触达区≥48px
+- 今日微课
+  - 断言：返回 2卡+1故事+1亲情+1逻辑；点击“点读/播放/下一条”触发 UI 更新
+- Chat（流式）
+  - 发送后 2s 内出现首段；中途“停止”立即停止追加；“重试”重新开始
+  - 断线重连（模拟 500ms 断网）：最多 2 次退避重连；最终 [DONE] 收尾
+- 安全检查
+  - 输入“拿刀打人”→ 输出包含“安全工具/不友善的行为”，changed=True
+- 家长中心
+  - 开关项可点击；导航往返状态保留
+
+### 可访问性与响应式
+- a11y：axe 严重问题=0；可见焦点；图片有替代文本；颜色对比度 AA
+- 断点：375/768/1280
+  - 底部导航在移动端固定可见；内容不重叠；Chat 流式区滚动正常
+
+### 性能预算（关键页面）
+- 首页/微课：LCP < 2.5s（3G 目标 < 3.5s）；交互延迟 < 100ms
+- Chat（首字时延）：< 800ms（网络正常）；TTS 首播 < 1.5s（启用时）
+
 ### 5. 个性化（S3）
 - 推荐器（规则+近因记忆）
   - 输入：兴趣=红/拼搭/音乐；最近正确率/停留
@@ -82,6 +114,7 @@
   - 流式：首字延迟<800ms；中断恢复<3s
 - 观测：日志脱敏；指标包含 success/error/timeout/breaker 状态/切换次数；Trace 贯穿
 - 安全：密钥不落盘；错误不泄漏敏感信息；内容重写可触发
+ - 前端：LCP/交互延迟达标；SSE 重连退避策略生效；按键触达≥48px
 
 ## E2E/a11y（S2–S4）
 - Playwright：跨断点（375/768/1280）关键路径通过
@@ -90,6 +123,8 @@
 ## 定义完成（DoD）
 - 全部上述用例具备测试实现，CI 通过；覆盖率≥80%
 - 评审意见已落实（PR/Issue 关联）
+ - 前端方案A落地：五大页面可用（/、/chat、/lesson、/parent、/safety），E2E 关键路径通过
+ - 性能与可达性达标（LCP/交互延迟；a11y 严重问题=0；触达≥48px）
 
 ## 附录：测试清单（片段）
 ```yaml
@@ -104,7 +139,11 @@ integration:
   - test_chat_api_error_body
   - test_failover_switch
 e2e:
-  - test_stream_sse_flow_and_cancel
-  - test_responsive_core_paths
-  - test_a11y_homepage
+  - test_homepage_cards_and_bottom_nav
+  - test_lesson_today_flow_buttons
+  - test_chat_stream_sse_flow_done_and_cancel
+  - test_safety_rewrite_interaction
+  - test_parent_toggles_persist
+  - test_responsive_core_paths_375_768_1280
+  - test_a11y_key_pages_no_critical
 ```

@@ -1,3 +1,8 @@
+"""Application-wide Prometheus metrics.
+
+Exposes /metrics and provides helper functions to record HTTP and LLM metrics.
+These counters/histograms enable fast troubleshooting and SLA/SLO monitoring.
+"""
 from fastapi import APIRouter, Response
 from prometheus_client import Counter, Histogram, CollectorRegistry, generate_latest, CONTENT_TYPE_LATEST
 

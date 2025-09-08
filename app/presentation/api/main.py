@@ -1,3 +1,11 @@
+"""FastAPI application setup: middlewares, routers, error handling.
+
+Adds:
+- CORS policy (development-friendly, can be tightened in prod)
+- Trace-Id middleware with request duration metrics
+- Generic exception handler with trace propagation
+- DI of providers and use cases, plus dataset preload
+"""
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from app.presentation.api import mount_v1

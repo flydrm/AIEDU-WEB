@@ -1,3 +1,8 @@
+"""Application use case for chat completions.
+
+Keep business orchestration separate from transport (FastAPI) and infra clients.
+This allows easy substitution in tests and future extensions (e.g., safety/TTS).
+"""
 from __future__ import annotations
 
 from typing import Any

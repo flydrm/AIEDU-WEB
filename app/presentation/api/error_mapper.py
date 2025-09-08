@@ -1,3 +1,7 @@
+"""Map domain/application errors to HTTP exceptions for the API layer.
+
+Centralizes error mapping ensuring consistent status codes and payload schema.
+"""
 from fastapi import HTTPException
 from app.infrastructure.ai.errors import (
     AppError,

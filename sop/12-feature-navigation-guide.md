@@ -41,227 +41,72 @@ frontend (Next.js/Vite)
 ```
 
 ### 2.2 代码结构导航
-```kotlin
-// 使用结构化注释快速定位
-/**
- * 🎯 功能入口：AI故事生成
- * 📍 位置：com.enlightenment.ai.presentation.story
- * 🔗 关联：HomeScreen -> 故事按钮 -> StoryScreen
- * 
- * 调用链路：
- * 1. HomeScreen点击"故事世界"
- * 2. Navigation导航到StoryScreen
- * 3. StoryViewModel.generateStory()
- * 4. GenerateStoryUseCase执行
- * 5. StoryRepository调用API
- */
+```text
+🎯 功能：故事生成
+📍 后端：app/presentation/api/v1/stories.py（POST /api/v1/stories）
+🔗 链路：Router -> UseCase -> Repository -> DB/Client
+📍 前端：/stories 页面 -> API 调用 -> 展示
 ```
 
 ## 3. 主要功能模块详解
 
-### 3.1 首页模块
-```kotlin
-/**
- * 首页功能入口
- * 文件：presentation/home/HomeScreen.kt
- */
-@Composable
-fun HomeScreen(
-    // 导航回调 - 点击各功能按钮时调用
-    onNavigateToStory: () -> Unit,      // 跳转到故事
-    onNavigateToDialogue: () -> Unit,   // 跳转到对话
-    onNavigateToCamera: () -> Unit,     // 跳转到相机
-    onNavigateToProfile: () -> Unit,    // 跳转到个人中心
-    onNavigateToParent: () -> Unit      // 跳转到家长入口
-) {
-    // 界面布局
-    Column {
-        // 顶部标题栏
-        TopAppBar(
-            title = { Text("AI启蒙时光") },
-            actions = {
-                // 家长入口按钮
-                IconButton(onClick = onNavigateToParent) {
-                    Icon(Icons.Default.Settings, "家长中心")
-                }
-            }
-        )
-        
-        // 功能网格
-        LazyVerticalGrid(columns = GridCells.Fixed(2)) {
-            // 故事世界入口
-            item {
-                FeatureCard(
-                    title = "故事世界",
-                    icon = Icons.Story,
-                    onClick = onNavigateToStory
-                )
-            }
-            
-            // 智能对话入口
-            item {
-                FeatureCard(
-                    title = "智能对话",
-                    icon = Icons.Chat,
-                    onClick = onNavigateToDialogue
-                )
-            }
-            
-            // 探索相机入口
-            item {
-                FeatureCard(
-                    title = "探索相机",
-                    icon = Icons.Camera,
-                    onClick = onNavigateToCamera
-                )
-            }
-            
-            // 我的资料入口
-            item {
-                FeatureCard(
-                    title = "我的",
-                    icon = Icons.Person,
-                    onClick = onNavigateToProfile
-                )
-            }
-        }
-    }
+### 3.1 首页模块（前端）
+```tsx
+// pages/index.tsx（示例）
+export default function Home() {
+  return (
+    <main>
+      <nav>
+        {/* 链接到 /stories /chat /profile */}
+      </nav>
+    </main>
+  );
 }
 ```
 
-### 3.2 AI故事模块
-```kotlin
-/**
- * AI故事功能完整链路
- */
+### 3.2 故事模块（后端）
+```python
+# app/presentation/api/v1/stories.py（示例）
+from fastapi import APIRouter
+from pydantic import BaseModel
 
-// 1. 界面入口
-// 文件：presentation/story/StoryScreen.kt
-@Composable
-fun StoryScreen(
-    viewModel: StoryViewModel = hiltViewModel(),
-    onBack: () -> Unit
-) {
-    val uiState by viewModel.uiState.collectAsState()
-    
-    // 故事主题输入
-    var topic by remember { mutableStateOf("") }
-    
-    Column {
-        // 输入区域
-        OutlinedTextField(
-            value = topic,
-            onValueChange = { topic = it },
-            label = { Text("想听什么故事？") }
-        )
-        
-        // 生成按钮
-        Button(
-            onClick = { viewModel.generateStory(topic) },
-            enabled = topic.isNotBlank() && !uiState.isLoading
-        ) {
-            Text("生成故事")
-        }
-        
-        // 结果展示
-        when (uiState) {
-            is StoryUiState.Loading -> LoadingAnimation()
-            is StoryUiState.Success -> StoryContent(uiState.story)
-            is StoryUiState.Error -> ErrorMessage(uiState.message)
-        }
-    }
-}
 
-// 2. ViewModel层
-// 文件：presentation/story/StoryViewModel.kt
-@HiltViewModel
-class StoryViewModel @Inject constructor(
-    private val generateStoryUseCase: GenerateStoryUseCase,
-    private val textToSpeech: TextToSpeechManager
-) : ViewModel() {
-    
-    private val _uiState = MutableStateFlow<StoryUiState>(StoryUiState.Idle)
-    val uiState: StateFlow<StoryUiState> = _uiState.asStateFlow()
-    
-    /**
-     * 生成故事的入口方法
-     * 调用链：UI点击 -> ViewModel -> UseCase -> Repository -> API
-     */
-    fun generateStory(topic: String) {
-        viewModelScope.launch {
-            _uiState.value = StoryUiState.Loading
-            
-            generateStoryUseCase(topic)
-                .onSuccess { story ->
-                    _uiState.value = StoryUiState.Success(story)
-                    // 可选：自动播放语音
-                    playStoryAudio(story.content)
-                }
-                .onFailure { error ->
-                    _uiState.value = StoryUiState.Error(
-                        getUserFriendlyError(error)
-                    )
-                }
-        }
-    }
-}
+router = APIRouter(prefix="/api/v1/stories", tags=["stories"])
 
-// 3. UseCase层
-// 文件：domain/usecase/GenerateStoryUseCase.kt
-class GenerateStoryUseCase @Inject constructor(
-    private val storyRepository: StoryRepository
-) {
-    /**
-     * 业务逻辑入口
-     * 职责：参数验证、业务规则处理
-     */
-    suspend operator fun invoke(topic: String): Result<Story> {
-        // 验证输入
-        if (topic.isBlank()) {
-            return Result.failure(IllegalArgumentException("主题不能为空"))
-        }
-        
-        // 调用Repository
-        return storyRepository.generateStory(topic)
-    }
-}
 
-// 4. Repository层
-// 文件：data/repository/StoryRepositoryImpl.kt
-@Singleton
-class StoryRepositoryImpl @Inject constructor(
-    private val apiService: StoryApiService,
-    private val storyDao: StoryDao,
-    private val networkRetryPolicy: NetworkRetryPolicy
-) : StoryRepository {
-    
-    /**
-     * 数据获取入口
-     * 职责：协调远程和本地数据源
-     */
-    override suspend fun generateStory(topic: String): Result<Story> {
-        return try {
-            // 优先从网络获取
-            val story = networkRetryPolicy.retryableNetworkCall {
-                apiService.generateStory(
-                    StoryRequest(topic = topic)
-                )
-            }
-            
-            // 保存到本地
-            storyDao.insertStory(story.toEntity())
-            
-            Result.success(story.toDomainModel())
-        } catch (e: Exception) {
-            // 降级到本地缓存
-            val cachedStory = storyDao.getRandomStory()
-            if (cachedStory != null) {
-                Result.success(cachedStory.toDomainModel())
-            } else {
-                Result.failure(e)
-            }
-        }
-    }
+class CreateStoryRequest(BaseModel):
+    topic: str
+
+
+@router.post("", status_code=201)
+async def create_story(req: CreateStoryRequest):
+    # 调用 use case 与 repository ...
+    return {"id": "1", "title": req.topic, "content": "..."}
+```
+
+### 3.3 故事模块（前端）
+```tsx
+// pages/stories.tsx（示例）
+import { useState } from 'react';
+
+export default function Stories() {
+  const [topic, setTopic] = useState('');
+  const [content, setContent] = useState('');
+  const submit = async () => {
+    const res = await fetch('/api/v1/stories', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ topic })
+    });
+    const data = await res.json();
+    setContent(data.content);
+  };
+  return (
+    <div>
+      <input value={topic} onChange={e => setTopic(e.target.value)} />
+      <button onClick={submit} disabled={!topic}>生成</button>
+      <pre>{content}</pre>
+    </div>
+  );
 }
 ```
 

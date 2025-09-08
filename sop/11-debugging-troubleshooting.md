@@ -26,132 +26,26 @@ async def traced_get(url: str) -> dict:
 
 ## 2. 常见问题诊断与修复
 
-### 2.1 崩溃问题排查
-```kotlin
-/**
- * 崩溃日志收集与分析
- */
+### 2.1 异常与全局错误处理
+```python
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 
-// 1. 全局异常处理器
-class CrashHandler : Thread.UncaughtExceptionHandler {
-    
-    private val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
-    
-    override fun uncaughtException(thread: Thread, throwable: Throwable) {
-        // 记录崩溃信息
-        Timber.e(throwable, "💥 应用崩溃")
-        
-        // 保存崩溃日志到文件
-        saveCrashLog(throwable)
-        
-        // 上报到Crashlytics（如果集成）
-        // FirebaseCrashlytics.getInstance().recordException(throwable)
-        
-        // 调用默认处理器
-        defaultHandler?.uncaughtException(thread, throwable)
-    }
-    
-    private fun saveCrashLog(throwable: Throwable) {
-        val crashInfo = buildString {
-            appendLine("=== 崩溃信息 ===")
-            appendLine("时间: ${Date()}")
-            appendLine("设备: ${Build.MODEL} (${Build.VERSION.SDK_INT})")
-            appendLine("版本: ${BuildConfig.VERSION_NAME}")
-            appendLine()
-            appendLine("=== 异常堆栈 ===")
-            appendLine(throwable.stackTraceToString())
-        }
-        
-        // 保存到文件或上传服务器
-        Timber.d("崩溃日志:\n$crashInfo")
-    }
-}
 
-// 2. 在Application中注册
-class EnlightenmentApp : Application() {
-    override fun onCreate() {
-        super.onCreate()
-        
-        // 设置崩溃处理器
-        Thread.setDefaultUncaughtExceptionHandler(CrashHandler())
-    }
-}
+app = FastAPI()
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(_: Request, exc: Exception):
+    # TODO: 记录结构化日志，包含 trace_id、path、method
+    return JSONResponse(status_code=500, content={"detail": "服务异常，请稍后再试"})
 ```
 
-### 2.2 内存泄漏排查
-```kotlin
-/**
- * 内存泄漏检测与修复
- */
-
-// 1. 常见内存泄漏场景及修复
-
-// ❌ 错误：Activity泄漏
-class LeakyActivity : AppCompatActivity() {
-    companion object {
-        var instance: LeakyActivity? = null  // 静态引用导致泄漏
-    }
-    
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        instance = this  // 内存泄漏！
-    }
-}
-
-// ✅ 正确：使用WeakReference
-class SafeActivity : AppCompatActivity() {
-    companion object {
-        var instance: WeakReference<SafeActivity>? = null
-    }
-    
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        instance = WeakReference(this)
-    }
-    
-    override fun onDestroy() {
-        super.onDestroy()
-        instance?.clear()
-    }
-}
-
-// 2. ViewModel中的内存泄漏
-
-// ❌ 错误：持有Context引用
-class LeakyViewModel(
-    private val context: Context  // 可能泄漏Activity
-) : ViewModel()
-
-// ✅ 正确：使用Application Context
-class SafeViewModel(
-    private val application: Application  // 使用Application Context
-) : AndroidViewModel(application)
-
-// 3. 协程作用域管理
-
-// ❌ 错误：使用GlobalScope
-class LeakyRepository {
-    fun fetchData() {
-        GlobalScope.launch {  // 生命周期不受控制
-            // 长时间运行的任务
-        }
-    }
-}
-
-// ✅ 正确：使用合适的作用域
-class SafeRepository {
-    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-    
-    fun fetchData() {
-        scope.launch {
-            // 任务会在scope取消时自动取消
-        }
-    }
-    
-    fun cleanup() {
-        scope.cancel()  // 清理时取消所有任务
-    }
-}
+### 2.2 资源泄漏排查
+```text
+- 连接/会话：数据库、Redis、HTTP 客户端需集中管理并在应用生命周期内复用
+- 文件句柄：上传/下载/流式处理确保 finally/async with 关闭
+- 子进程/线程：避免孤儿进程与线程池耗尽，设置超时与回收
 ```
 
 ### 2.3 卡顿/阻塞
@@ -161,77 +55,11 @@ class SafeRepository {
 - 外部依赖慢：增加超时与重试/熔断
 ```
 
-### 2.4 Compose UI问题调试
-```kotlin
-/**
- * Compose特有的调试技巧
- */
-
-// 1. 重组次数追踪
-class RecompositionCounter {
-    var count by mutableStateOf(0)
-        private set
-    
-    fun track(tag: String) {
-        count++
-        Timber.d("🔄 [$tag] 重组次数: $count")
-    }
-}
-
-@Composable
-fun TrackedComposable() {
-    val counter = remember { RecompositionCounter() }
-    
-    // 追踪重组
-    SideEffect {
-        counter.track("TrackedComposable")
-    }
-    
-    Column {
-        Text("重组次数: ${counter.count}")
-        // UI内容
-    }
-}
-
-// 2. 性能问题定位
-@Composable
-fun PerformanceIssueExample() {
-    // ❌ 错误：每次重组都创建新对象
-    Column {
-        val heavyObject = createHeavyObject()  // 性能问题！
-    }
-    
-    // ✅ 正确：使用remember缓存
-    Column {
-        val heavyObject = remember { createHeavyObject() }
-    }
-    
-    // ✅ 使用derivedStateOf优化计算
-    val items = remember { mutableStateListOf<Item>() }
-    val filteredItems = remember {
-        derivedStateOf {
-            items.filter { it.isVisible }
-        }
-    }
-}
-
-// 3. 布局边界可视化
-@Composable
-fun DebugLayout(
-    content: @Composable () -> Unit
-) {
-    if (BuildConfig.DEBUG) {
-        Box(
-            modifier = Modifier
-                .border(1.dp, Color.Red)  // 显示边界
-                .padding(1.dp)
-        ) {
-            content()
-        }
-    } else {
-        content()
-    }
-}
+### 2.4 前端联调（如适用）
+```text
+- CORS 与本地代理：确保跨域策略与开发代理正确配置
+- 浏览器 DevTools：Network/Performance/Console 分析请求与渲染
+- Source Map：断点与错误定位；统一错误上报（Sentry/前端 SDK）
 ```
 
 ## 3. 性能问题诊断

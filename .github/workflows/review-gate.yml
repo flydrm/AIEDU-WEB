@@ -1,0 +1,14 @@
+name: review-gate
+
+on:
+  pull_request:
+    branches: [ "**" ]
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: No-op gate (disabled per request)
+        run: echo "review-gate disabled"

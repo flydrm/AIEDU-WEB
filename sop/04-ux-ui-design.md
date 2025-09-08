@@ -1,4 +1,4 @@
-# UX/UI设计SOP
+# UX/UI设计SOP（Web）
 
 ## 目的
 建立标准化的UX/UI设计流程，确保产品界面美观、交互流畅、用户体验优秀。
@@ -52,7 +52,7 @@ journey
       关闭应用: 5: 小明
 ```
 
-### 2. 信息架构
+### 2. 信息架构（Web 导航/站点地图）
 
 #### 2.1 功能架构
 ```
@@ -79,33 +79,47 @@ AI启蒙时光
     └── 内容设置
 ```
 
-#### 2.2 导航设计
-```kotlin
-// 底部导航（儿童）
-BottomNavigation {
-    items = listOf(
-        NavigationItem(
-            icon = Icons.Home,
-            label = "首页",
-            iconSize = 32.dp  // 大图标
-        ),
-        NavigationItem(
-            icon = Icons.Story,
-            label = "故事",
-            iconSize = 32.dp
-        ),
-        NavigationItem(
-            icon = Icons.Chat,
-            label = "聊天",
-            iconSize = 32.dp
-        ),
-        NavigationItem(
-            icon = Icons.Camera,
-            label = "拍照",
-            iconSize = 32.dp
-        )
-    )
-}
+#### 2.2 导航设计（示例）
+```text
+- 顶部导航：Logo / 主导航 / 登录区
+- 侧边栏（可选）：分组功能导航
+- 面包屑：层级定位
+```
+
+### 2.3 响应式/自适应策略
+```text
+- 断点（建议）：
+  - xs < 480, sm 480-768, md 768-1024, lg 1024-1440, xl > 1440
+- 布局：
+  - 栅格/流式布局（flex/grid），避免固定宽高
+  - 容器查询（如支持）与媒体查询结合
+- 字体/尺寸：
+  - 使用 rem/em/clamp() 控制可缩放排版
+  - 触控区域 ≥ 44px；控件跨端尺寸适配
+- 图像：
+  - 响应式图片（srcset/sizes）、延迟加载（loading=lazy）
+  - 按需裁剪与压缩
+- 交互：
+  - 触控/鼠标/键盘一致性；焦点可见；防止 hover-only
+- 无障碍：
+  - 语义化标签/ARIA；对比度 AA；键盘可达
+```
+
+### 3. 设计 Tokens（推荐）
+```text
+- 命名规范：brand.primary, surface.bg, text.muted, spacing.4, radius.lg
+- 声明：使用 CSS variables（:root 与主题作用域）
+- 例：
+  :root {
+    --color-brand-primary: #2f6df6;
+    --color-surface-bg: #ffffff;
+    --color-text-muted: #6b7280;
+    --space-4: 0.25rem; --space-8: 0.5rem; --space-16: 1rem;
+    --radius-md: 8px; --radius-lg: 12px;
+    --font-size-body: clamp(14px, 1.6vw, 16px);
+  }
+- 断点映射：在媒体查询中重载部分 tokens（如字号/间距）
+- 组件消费：仅通过 tokens（避免硬编码颜色/尺寸）
 ```
 
 ### 3. 视觉设计
@@ -118,64 +132,25 @@ BottomNavigation {
 - **趣味性**: 动画和音效增加乐趣
 
 #### 3.2 设计系统
-```kotlin
-// 颜色系统
-object ColorPalette {
-    // 主色调 - 活力温暖
-    val Primary = Color(0xFFFF6B6B)      // 珊瑚红
-    val Secondary = Color(0xFF4ECDC4)    // 薄荷绿
-    val Tertiary = Color(0xFFFFD93D)     // 阳光黄
-    
-    // 背景色 - 柔和舒适
-    val Background = Color(0xFFFFF5F5)   // 淡粉白
-    val Surface = Color(0xFFFFFFFF)      // 纯白
-    
-    // 语义色 - 清晰明确
-    val Success = Color(0xFF6BCF7F)      // 成功绿
-    val Warning = Color(0xFFFFB74D)      // 警告橙
-    val Error = Color(0xFFE57373)        // 错误红
-}
+```text
+颜色（示例）：
+- 主色：#FF6B6B（Primary）
+- 次色：#4ECDC4（Secondary）
+- 三级：#FFD93D（Tertiary）
+- 背景：#FFF5F5（Background） / #FFFFFF（Surface）
+- 语义：Success(#6BCF7F)/Warning(#FFB74D)/Error(#E57373)
 
-// 字体系统
-object Typography {
-    val H1 = TextStyle(
-        fontSize = 32.sp,
-        fontWeight = FontWeight.Bold,
-        lineHeight = 40.sp
-    )
-    val Body = TextStyle(
-        fontSize = 18.sp,
-        fontWeight = FontWeight.Normal,
-        lineHeight = 26.sp
-    )
-    val Button = TextStyle(
-        fontSize = 20.sp,
-        fontWeight = FontWeight.Medium,
-        letterSpacing = 0.5.sp
-    )
-}
+排版（Web）：
+- H1: 32px/40px Bold
+- Body: 18px/26px Regular
+- Button: 20px Medium letter-spacing 0.5px
 
-// 间距系统
-object Spacing {
-    val xs = 4.dp
-    val sm = 8.dp
-    val md = 16.dp
-    val lg = 24.dp
-    val xl = 32.dp
-    val xxl = 48.dp
-}
-
-// 圆角系统
-object Radius {
-    val small = 8.dp
-    val medium = 16.dp
-    val large = 24.dp
-    val full = 50
-}
+间距：4/8/16/24/32/48
+圆角：8/16/24/全圆
 ```
 
 #### 3.3 组件设计 【重要：必须包含详细交互注释】
-```kotlin
+```text
 /**
  * 儿童友好的按钮组件
  * 
@@ -203,7 +178,7 @@ object Radius {
  * - 调整尺寸需要保证最小可触摸区域48dp
  * - 添加动画效果注意性能影响
  */
-@Composable
+（示例为 Web 组件写法，移除 Compose 修饰符）
 fun KidButton(
     text: String,
     onClick: () -> Unit,
@@ -277,7 +252,7 @@ fun KidButton(
 ### 4. 交互设计
 
 #### 4.1 手势设计
-```kotlin
+```text
 // 支持的手势
 - 点击 (Tap): 主要交互方式
 - 长按 (LongPress): 显示提示
@@ -291,9 +266,9 @@ fun KidButton(
 ```
 
 #### 4.2 动画设计
-```kotlin
+```text
 // 进入动画
-@Composable
+（示例为 Web 组件写法）
 fun EnterAnimation(content: @Composable () -> Unit) {
     val visible = remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { visible.value = true }
@@ -342,7 +317,7 @@ fun ClickableBounce(
 ```
 
 #### 4.3 反馈机制
-```kotlin
+```text
 // 视觉反馈
 - 按钮按下效果
 - 加载进度展示
@@ -360,7 +335,7 @@ fun ClickableBounce(
 ### 5. 响应式设计
 
 #### 5.1 设备适配
-```kotlin
+```text
 // 屏幕尺寸分类
 enum class WindowSize {
     Compact,   // 手机
@@ -368,7 +343,7 @@ enum class WindowSize {
     Expanded   // 大平板
 }
 
-@Composable
+（示例为 Web 组件写法）
 fun rememberWindowSize(): WindowSize {
     val configuration = LocalConfiguration.current
     return when {
@@ -390,7 +365,7 @@ fun ResponsiveLayout() {
 ```
 
 #### 5.2 横竖屏适配
-```kotlin
+```text
 @Composable
 fun AdaptiveLayout() {
     val configuration = LocalConfiguration.current

@@ -156,6 +156,21 @@ for (const viewport of viewports) {
 }
 ```
 
+### 2.3 可访问性（a11y）检查
+```ts
+import { test, expect } from '@playwright/test';
+import { injectAxe, checkA11y } from 'axe-playwright';
+
+test('a11y on homepage', async ({ page }) => {
+  await page.goto('http://localhost:3000');
+  await injectAxe(page);
+  await checkA11y(page, undefined, {
+    detailedReport: true,
+    detailedReportOptions: { html: true },
+  });
+});
+```
+
 ### 2.2 测试ID最佳实践
 ```text
 // 为复杂UI元素添加testTag

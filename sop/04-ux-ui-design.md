@@ -105,6 +105,23 @@ AI启蒙时光
   - 语义化标签/ARIA；对比度 AA；键盘可达
 ```
 
+### 3. 设计 Tokens（推荐）
+```text
+- 命名规范：brand.primary, surface.bg, text.muted, spacing.4, radius.lg
+- 声明：使用 CSS variables（:root 与主题作用域）
+- 例：
+  :root {
+    --color-brand-primary: #2f6df6;
+    --color-surface-bg: #ffffff;
+    --color-text-muted: #6b7280;
+    --space-4: 0.25rem; --space-8: 0.5rem; --space-16: 1rem;
+    --radius-md: 8px; --radius-lg: 12px;
+    --font-size-body: clamp(14px, 1.6vw, 16px);
+  }
+- 断点映射：在媒体查询中重载部分 tokens（如字号/间距）
+- 组件消费：仅通过 tokens（避免硬编码颜色/尺寸）
+```
+
 ### 3. 视觉设计
 
 #### 3.1 设计原则

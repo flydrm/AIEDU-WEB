@@ -81,6 +81,7 @@ graph LR
 - 性能：P95 API 延迟达标（如 < 200ms，视服务而定）
 - 前端体验（Web Vitals）：LCP < 2.5s、FID < 100ms、CLS < 0.1（关键页面）
 - 安全：依赖与镜像安全扫描零高危（pip-audit/trivy）
+ - 可访问性：关键页面通过基础 a11y 检查（axe/Pa11y，关键问题为零）
 
 ### 用户满意度（Web）
 - 可用性：SLA、错误率、P95 延迟

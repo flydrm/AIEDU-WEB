@@ -199,7 +199,8 @@ K8s Deployment 使用分批/金丝雀/蓝绿发布；按流量或实例比例推
 - 日志：结构化 JSON，集中收集（ELK/Datadog/Cloud Logging）
 - 指标：Prometheus/Grafana，错误率/延迟/吞吐/资源
 - 追踪：OpenTelemetry + backend（Tempo/Jaeger/Datadog）
- - Web Vitals（核心体验）：LCP < 2.5s、FID < 100ms、CLS < 0.1（关键页面）
+- Web Vitals（核心体验）：LCP < 2.5s、FID < 100ms、CLS < 0.1（关键页面）
+- 前端合成监控：定时脚本访问关键路径并上报 vitals/接口健康
 
 ### 7.2 监控仪表板
 ```markdown

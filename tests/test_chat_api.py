@@ -16,16 +16,18 @@ def test_chat_api_non_stream_contract():
         ],
         "stream": False,
     }
-    r = client.post("/api/v1/ai/chat", json=payload)
+    r = client.post("/api/v1/ai/chat", json=payload, headers={"X-Trace-Id": "trace-test"})
     assert r.status_code == 200
     data = r.json()
     assert data["object"] == "chat.completion"
     assert data["choices"][0]["message"]["role"] == "assistant"
+    assert r.headers.get("X-Trace-Id") == "trace-test"
 
 
 def test_chat_api_error_body():
     payload = {"model": "m", "messages": []}
-    r = client.post("/api/v1/ai/chat", json=payload)
+    r = client.post("/api/v1/ai/chat", json=payload, headers={"X-Trace-Id": "trace-test2"})
     assert r.status_code == 400
     detail = r.json().get("detail")
     assert detail.get("code") == "BAD_REQUEST"
+    assert r.headers.get("X-Trace-Id") == "trace-test2"

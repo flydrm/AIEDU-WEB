@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from app.presentation.api import mount_v1
 from app.infrastructure.ai.settings import load_providers
@@ -13,9 +13,21 @@ def create_app() -> FastAPI:
     async def health():
         return {"status": "ok"}
 
+    @app.middleware("http")
+    async def add_trace_id(request: Request, call_next):
+        trace_id = request.headers.get("X-Trace-Id") or "trace-" + str(id(request))
+        response = await call_next(request)
+        response.headers["X-Trace-Id"] = trace_id
+        return response
+
     @app.exception_handler(Exception)
-    async def generic_exception_handler(_, exc: Exception):
-        return JSONResponse(status_code=500, content={"code": "INTERNAL_ERROR", "message": str(exc)})
+    async def generic_exception_handler(request: Request, exc: Exception):
+        trace_id = request.headers.get("X-Trace-Id") or "trace-" + str(id(request))
+        return JSONResponse(
+            status_code=500,
+            content={"code": "INTERNAL_ERROR", "message": str(exc), "trace_id": trace_id},
+            headers={"X-Trace-Id": trace_id},
+        )
 
     # initialize minimal router for DI (can be injected per request later)
     providers = load_providers()

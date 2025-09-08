@@ -19,6 +19,20 @@ HTTP_REQUEST_DURATION = Histogram(
     registry=REGISTRY,
 )
 
+# LLM metrics
+LLM_REQUESTS = Counter(
+    "llm_requests_total",
+    "LLM request count",
+    ["provider", "result"],
+    registry=REGISTRY,
+)
+LLM_FAILOVER = Counter(
+    "llm_failover_total",
+    "LLM failover switches",
+    ["from", "to"],
+    registry=REGISTRY,
+)
+
 
 @router.get("/metrics")
 async def metrics():
@@ -29,4 +43,16 @@ def record_request_metrics(path: str, method: str, status: int, duration: float)
     labels = {"path": path, "method": method, "status": str(status)}
     HTTP_REQUESTS.labels(**labels).inc()
     HTTP_REQUEST_DURATION.labels(**labels).observe(duration)
+
+
+def record_llm_success(provider: str) -> None:
+    LLM_REQUESTS.labels(provider=provider, result="success").inc()
+
+
+def record_llm_error(provider: str, result: str) -> None:
+    LLM_REQUESTS.labels(provider=provider, result=result).inc()
+
+
+def record_llm_failover(from_provider: str, to_provider: str) -> None:
+    LLM_FAILOVER.labels(**{"from": from_provider, "to": to_provider}).inc()
 

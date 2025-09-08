@@ -13,6 +13,7 @@ from app.presentation.api import mount_v1
 from app.infrastructure.ai.settings import load_providers
 from app.infrastructure.ai.clients import FailoverLLMRouter
 from app.application.use_cases.chat_completion import ChatCompletionUseCase
+from app.infrastructure.rag.retriever import SimpleRetriever
 import json
 import time
 import uuid
@@ -93,8 +94,14 @@ def create_app() -> FastAPI:
         if providers
         else None
     )
+    retriever = None
+    try:
+        # build lightweight retriever from kids dataset if available
+        retriever = SimpleRetriever.from_kids_dataset(app.state.kids_dataset)
+    except Exception:
+        retriever = None
     app.state.chat_uc = (
-        ChatCompletionUseCase(app.state.llm_router) if app.state.llm_router else None
+        ChatCompletionUseCase(app.state.llm_router, retriever) if app.state.llm_router else None
     )
     # load kids dataset for personalization if available
     try:

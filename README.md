@@ -1,6 +1,6 @@
-# 项目文档索引
+# 项目文档索引（Python 3.11 Web）
 
-本项目的 Android 开发 SOP 文档已迁移至 `sop/` 目录。
+本项目的 Web 开发 SOP 文档位于 `sop/` 目录。
 
 ## 快速入口
 
@@ -17,7 +17,7 @@
 - [06 代码审查](./sop/06-code-review.md)
 - [07 测试策略](./sop/07-testing-strategy.md)
 - [08 发布流程](./sop/08-release-process.md)
-- [09 中文注释规范（重点）](./sop/09-comment-standards.md)
+- [09 Docstring 与中文注释规范（重点）](./sop/09-comment-standards.md)
 - [10 开发环境指南](./sop/10-dev-environment-guide.md)
 - [11 调试与问题修复](./sop/11-debugging-troubleshooting.md)
 - [12 功能入口快速定位](./sop/12-feature-navigation-guide.md)

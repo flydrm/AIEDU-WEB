@@ -96,60 +96,21 @@ AI启蒙时光
 - **趣味性**: 动画和音效增加乐趣
 
 #### 3.2 设计系统
-```kotlin
-// 颜色系统
-object ColorPalette {
-    // 主色调 - 活力温暖
-    val Primary = Color(0xFFFF6B6B)      // 珊瑚红
-    val Secondary = Color(0xFF4ECDC4)    // 薄荷绿
-    val Tertiary = Color(0xFFFFD93D)     // 阳光黄
-    
-    // 背景色 - 柔和舒适
-    val Background = Color(0xFFFFF5F5)   // 淡粉白
-    val Surface = Color(0xFFFFFFFF)      // 纯白
-    
-    // 语义色 - 清晰明确
-    val Success = Color(0xFF6BCF7F)      // 成功绿
-    val Warning = Color(0xFFFFB74D)      // 警告橙
-    val Error = Color(0xFFE57373)        // 错误红
-}
+```text
+颜色（示例）：
+- 主色：#FF6B6B（Primary）
+- 次色：#4ECDC4（Secondary）
+- 三级：#FFD93D（Tertiary）
+- 背景：#FFF5F5（Background） / #FFFFFF（Surface）
+- 语义：Success(#6BCF7F)/Warning(#FFB74D)/Error(#E57373)
 
-// 字体系统
-object Typography {
-    val H1 = TextStyle(
-        fontSize = 32.sp,
-        fontWeight = FontWeight.Bold,
-        lineHeight = 40.sp
-    )
-    val Body = TextStyle(
-        fontSize = 18.sp,
-        fontWeight = FontWeight.Normal,
-        lineHeight = 26.sp
-    )
-    val Button = TextStyle(
-        fontSize = 20.sp,
-        fontWeight = FontWeight.Medium,
-        letterSpacing = 0.5.sp
-    )
-}
+排版（Web）：
+- H1: 32px/40px Bold
+- Body: 18px/26px Regular
+- Button: 20px Medium letter-spacing 0.5px
 
-// 间距系统
-object Spacing {
-    val xs = 4.dp
-    val sm = 8.dp
-    val md = 16.dp
-    val lg = 24.dp
-    val xl = 32.dp
-    val xxl = 48.dp
-}
-
-// 圆角系统
-object Radius {
-    val small = 8.dp
-    val medium = 16.dp
-    val large = 24.dp
-    val full = 50
-}
+间距：4/8/16/24/32/48
+圆角：8/16/24/全圆
 ```
 
 #### 3.3 组件设计 【重要：必须包含详细交互注释】

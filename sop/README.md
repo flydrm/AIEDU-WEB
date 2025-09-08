@@ -7,7 +7,7 @@
 ## 目录结构
 
 ```
-docs/sop/web/
+sop/
 ├── README.md                           # 本文档
 ├── 01-requirements-development.md      # 需求开发SOP
 ├── 02-requirements-discussion.md       # 需求讨论SOP
@@ -20,17 +20,7 @@ docs/sop/web/
 ├── 09-comment-standards.md             # 🔴 Docstring与中文注释规范【极其重要】
 ├── 10-dev-environment-guide.md         # 开发环境与工具指南（Python/Web）
 ├── 11-debugging-troubleshooting.md     # 调试与问题修复指南（后端/前端）
-├── 12-feature-navigation-guide.md      # 路由与功能入口快速定位（API/前端路由）
-├── templates/                          # 各阶段模板
-│   ├── requirements-template.md        # 需求文档模板
-│   ├── architecture-template.md        # 架构文档模板
-│   ├── api-contract-template.md        # API 合同模板（OpenAPI）
-│   └── sprint-planning-template.md     # 迭代计划模板
-└── checklists/                         # 检查清单
-    ├── requirements-checklist.md       # 需求检查清单
-    ├── design-checklist.md             # 设计检查清单
-    ├── development-checklist.md        # 开发检查清单（后端/前端）
-    └── release-checklist.md            # 发布检查清单（CI/CD/基础设施）
+└── 12-feature-navigation-guide.md      # 路由与功能入口快速定位（API/前端路由）
 ```
 
 ## 开发流程概览

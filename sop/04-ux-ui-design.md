@@ -1,4 +1,4 @@
-# UX/UI设计SOP
+# UX/UI设计SOP（Web）
 
 ## 目的
 建立标准化的UX/UI设计流程，确保产品界面美观、交互流畅、用户体验优秀。
@@ -52,7 +52,7 @@ journey
       关闭应用: 5: 小明
 ```
 
-### 2. 信息架构
+### 2. 信息架构（Web 导航/站点地图）
 
 #### 2.1 功能架构
 ```
@@ -79,33 +79,11 @@ AI启蒙时光
     └── 内容设置
 ```
 
-#### 2.2 导航设计
-```kotlin
-// 底部导航（儿童）
-BottomNavigation {
-    items = listOf(
-        NavigationItem(
-            icon = Icons.Home,
-            label = "首页",
-            iconSize = 32.dp  // 大图标
-        ),
-        NavigationItem(
-            icon = Icons.Story,
-            label = "故事",
-            iconSize = 32.dp
-        ),
-        NavigationItem(
-            icon = Icons.Chat,
-            label = "聊天",
-            iconSize = 32.dp
-        ),
-        NavigationItem(
-            icon = Icons.Camera,
-            label = "拍照",
-            iconSize = 32.dp
-        )
-    )
-}
+#### 2.2 导航设计（示例）
+```text
+- 顶部导航：Logo / 主导航 / 登录区
+- 侧边栏（可选）：分组功能导航
+- 面包屑：层级定位
 ```
 
 ### 3. 视觉设计

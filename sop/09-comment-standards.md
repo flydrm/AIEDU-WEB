@@ -1,4 +1,4 @@
-# 中文注释规范SOP 【极其重要】
+# Docstring 与中文注释规范SOP（Python 3.11 Web）【极其重要】
 
 ## 🔴 为什么注释如此重要？
 
@@ -18,141 +18,40 @@
 
 ## 注释规范要求
 
-### 1. 类注释规范
+### 1. 类/模块 Docstring 规范（PEP257 + 中文业务）
 
-```kotlin
-/**
- * 故事生成仓库实现类
- * 
- * 功能概述：
- * 负责AI故事的生成、缓存和管理，是数据层的核心组件
- * 
- * 主要职责：
- * 1. 调用远程AI服务生成个性化故事
- * 2. 管理本地故事缓存，支持离线使用
- * 3. 实现故事内容的安全过滤
- * 4. 处理网络异常和降级策略
- * 
- * 技术特点：
- * - 使用协程处理异步操作
- * - 实现三级降级策略（AI服务→备用服务→本地缓存）
- * - 支持断网情况下的基本功能
- * 
- * 依赖说明：
- * - AIApiService: 远程AI服务接口
- * - StoryDao: 本地数据库访问
- * - ContentFilter: 内容安全过滤器
- * 
- * 使用示例：
- * ```
- * val story = storyRepository.generateStory("恐龙")
- * ```
- * 
- * 注意事项：
- * - AI服务调用有配额限制，需要合理使用
- * - 缓存清理策略会保留最近7天的数据
- * - 所有生成的内容都会经过儿童适宜性过滤
- * 
- * @author 张三
- * @since 1.0.0
- * @see StoryRepository 接口定义
- * @see AIApiService AI服务接口
- */
-@Singleton
-class StoryRepositoryImpl @Inject constructor(
-    private val apiService: AIApiService,
-    private val storyDao: StoryDao,
-    private val contentFilter: ContentFilter
-) : StoryRepository {
-    // 实现代码...
-}
+```python
+class StoryRepositoryImpl:
+    """故事仓库实现。
+
+    功能概述：
+      - 负责 AI 故事生成与缓存管理
+    职责：
+      1) 调用外部 AI 服务生成故事
+      2) 本地/分布式缓存管理
+      3) 内容安全过滤与降级策略
+    依赖：AIApiClient, Cache, ContentFilter
+    注意：外部调用有配额/超时限制；缓存一致性与过期策略
+    """
 ```
 
-### 2. 方法注释规范
+### 2. 函数/方法 Docstring 规范
 
-```kotlin
-/**
- * 生成个性化AI故事
- * 
- * 功能说明：
- * 根据用户输入的主题，调用AI服务生成适合儿童的个性化故事。
- * 包含智能降级机制，确保在各种网络环境下都能提供服务。
- * 
- * 业务流程：
- * 1. 验证输入主题的合法性
- * 2. 检查本地缓存是否有最近的相似故事
- * 3. 调用主AI服务（GEMINI-2.5-PRO）生成故事
- * 4. 如果主服务失败，尝试备用服务（GPT-5-PRO）
- * 5. 如果都失败，返回本地缓存的故事
- * 6. 对生成的内容进行安全过滤
- * 7. 保存到本地缓存供离线使用
- * 
- * @param topic 故事主题，支持的主题包括：
- *              - 动物类：恐龙、小兔子、大象等
- *              - 童话类：公主、王子、魔法等
- *              - 科幻类：太空、机器人、未来等
- *              - 日常类：上学、玩耍、家庭等
- * 
- * @param userAge 用户年龄（3-6岁），用于调整故事复杂度
- * 
- * @return Result<Story> 成功返回Story对象，包含：
- *         - id: 故事唯一标识
- *         - title: 故事标题
- *         - content: 故事内容（300-500字）
- *         - questions: 配套的理解问题（3-5个）
- *         失败返回具体错误信息
- * 
- * @throws IllegalArgumentException 当主题为空或包含不适当内容时
- * @throws NetworkException 当网络连接失败时
- * @throws QuotaExceededException 当AI服务配额用完时
- * 
- * 性能说明：
- * - 正常情况：2-5秒返回结果
- * - 网络较差：可能需要10-15秒
- * - 离线模式：立即返回缓存结果
- * 
- * 二次开发指南：
- * 1. 添加新主题：在SUPPORTED_TOPICS常量中添加
- * 2. 调整故事长度：修改StoryRequest中的length参数
- * 3. 更换AI模型：在AIModelConfig中配置新模型
- * 4. 自定义过滤规则：继承ContentFilter类
- * 
- * 更新历史：
- * - 2024-01-15: 添加内容过滤功能
- * - 2024-01-20: 优化降级策略
- * - 2024-01-25: 支持年龄个性化
- */
-override suspend fun generateStory(
-    topic: String,
-    userAge: Int = 5
-): Result<Story> = withContext(Dispatchers.IO) {
-    try {
-        // 步骤1: 参数验证
-        validateTopic(topic)
-        
-        // 步骤2: 尝试从缓存获取
-        getCachedStory(topic, userAge)?.let {
-            return@withContext Result.success(it)
-        }
-        
-        // 步骤3: 调用AI服务生成
-        val story = generateFromAI(topic, userAge)
-        
-        // 步骤4: 内容过滤
-        val filteredStory = contentFilter.filter(story)
-        
-        // 步骤5: 保存到缓存
-        saveToCache(filteredStory)
-        
-        Result.success(filteredStory)
-    } catch (e: Exception) {
-        // 记录详细错误信息，方便排查
-        Timber.e(e, "生成故事失败 - 主题: $topic, 年龄: $userAge")
-        
-        // 降级处理
-        handleError(e, topic, userAge)
-    }
-}
+```python
+def generate_story(topic: str, user_age: int = 5) -> Story:
+    """生成个性化 AI 故事。
+
+    功能：调用主/备 AI 服务生成故事并进行内容过滤
+    业务：非空主题、支持主题白名单、未成年人内容合规
+    参数：
+      - topic: 故事主题
+      - user_age: 年龄用于控制复杂度
+    返回：Story（标题/内容/问题）
+    异常：ValueError/NetworkError/QuotaExceeded
+    性能：正常 2-5s；弱网 10-15s；有缓存快速返回
+    扩展：可插拔模型与过滤策略
+    """
+    ...
 ```
 
 ### 3. 复杂逻辑注释

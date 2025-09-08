@@ -1,63 +1,43 @@
-# 功能入口快速定位指南
+# 路由与功能入口快速定位指南（Web）
 
 ## 目的
 帮助开发者快速找到各个功能模块的代码入口，理解功能之间的调用关系，提高开发和调试效率。
 
 ## 1. 项目功能地图
 
-### 1.1 整体架构概览
+### 1.1 整体架构概览（后端路由 + 前端路由）
 ```
-AI启蒙时光
-├── 启动入口
-│   ├── SplashActivity (启动页)
-│   └── MainActivity (主容器)
-├── 主要功能
-│   ├── 首页 (HomeScreen)
-│   ├── AI故事 (StoryScreen)
-│   ├── 智能对话 (DialogueScreen)
-│   ├── 拍照识别 (CameraScreen)
-│   └── 个人中心 (ProfileScreen)
-├── 家长功能
-│   ├── 家长验证 (ParentLoginScreen)
-│   └── 家长中心 (ParentDashboardScreen)
-└── 公共组件
-    ├── 主题系统 (Theme)
-    ├── 导航系统 (Navigation)
-    └── 通用组件 (Common)
+backend (FastAPI)
+├── app/presentation/api/v1
+│   ├── stories.py    # /api/v1/stories
+│   ├── dialogue.py   # /api/v1/dialogue
+│   └── users.py      # /api/v1/users
+├── app/application   # 用例
+├── app/domain        # 领域模型/接口
+└── app/infrastructure# DB/缓存/外部服务
+
+frontend (Next.js/Vite)
+├── routes/pages
+│   ├── /             # 首页
+│   ├── /stories      # 故事
+│   ├── /chat         # 对话
+│   └── /profile      # 个人中心
+└── components        # 通用组件
 ```
 
-### 1.2 核心功能入口映射表
-| 功能名称 | 界面入口 | ViewModel | UseCase | Repository |
-|---------|---------|-----------|---------|------------|
-| AI故事生成 | StoryScreen | StoryViewModel | GenerateStoryUseCase | StoryRepository |
-| 智能对话 | DialogueScreen | DialogueViewModel | SendDialogueMessageUseCase | DialogueRepository |
-| 拍照识别 | CameraScreen | CameraViewModel | RecognizeImageUseCase | ImageRecognitionRepository |
-| 个人资料 | ProfileScreen | ProfileViewModel | - | ProfileRepository |
-| 学习统计 | ProfileScreen | ProfileViewModel | - | LearningStatsRepository |
-| 家长中心 | ParentDashboardScreen | ParentDashboardViewModel | - | - |
+### 1.2 功能入口映射（后端/前端）
+| 功能 | 后端路由 | 用例 | 仓库 | 前端页面 |
+|------|----------|------|------|----------|
+| 故事生成 | /api/v1/stories | GenerateStoryUseCase | StoryRepository | /stories |
+| 智能对话 | /api/v1/dialogue | SendDialogueMessageUseCase | DialogueRepository | /chat |
+| 个人资料 | /api/v1/users/me | - | ProfileRepository | /profile |
 
 ## 2. 快速定位技巧
 
-### 2.1 使用Android Studio导航
-```kotlin
-/**
- * 快捷键大全（Mac/Windows）
- * 
- * 导航类：
- * - Cmd+O / Ctrl+N：查找类
- * - Cmd+Shift+O / Ctrl+Shift+N：查找文件
- * - Cmd+Shift+F / Ctrl+Shift+F：全局搜索
- * - Cmd+B / Ctrl+B：跳转到定义
- * - Cmd+Alt+B / Ctrl+Alt+B：跳转到实现
- * - Cmd+F12 / Ctrl+F12：查看文件结构
- * - Cmd+E / Ctrl+E：最近打开的文件
- * 
- * 代码分析：
- * - Cmd+P / Ctrl+P：查看参数信息
- * - Cmd+Shift+I / Ctrl+Shift+I：快速查看定义
- * - Alt+F7 / Alt+F7：查找使用位置
- * - Cmd+Alt+H / Ctrl+Alt+H：查看调用层级
- */
+### 2.1 导航与检索
+```text
+- 后端：搜索路由路径/函数名；查看依赖注入与用例调用
+- 前端：搜索页面路由/组件；定位数据请求与状态管理
 ```
 
 ### 2.2 代码结构导航

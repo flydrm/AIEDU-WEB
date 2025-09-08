@@ -1,4 +1,4 @@
-# Android Studio操作指南SOP
+# 开发环境与工具指南SOP（Python 3.11 Web）
 
 ## 目的
 提供详细的Android Studio使用指南，包括项目运行、功能入口定位、调试技巧、问题修复和打包发布等操作规范。
@@ -7,149 +7,71 @@
 
 ### 1.1 首次导入项目
 ```bash
-# 1. 克隆项目
-git clone https://github.com/company/ai-enlightenment-time.git
-cd ai-enlightenment-time
+git clone https://github.com/company/project.git
+cd project
 
-# 2. 打开Android Studio
-# File -> Open -> 选择项目根目录
-
-# 3. 等待项目同步
-# Android Studio会自动下载依赖，可能需要5-10分钟
+# 使用 uv（推荐）或 poetry/pip
+pip install -U uv || true
+uv sync  # 或 poetry install / pip install -r requirements.txt
 ```
 
 ### 1.2 环境配置检查
-```kotlin
-/**
- * 检查清单：
- * 1. JDK版本：11或17
- * 2. Gradle版本：8.1.1
- * 3. Android SDK：API 24-34
- * 4. Kotlin版本：1.9.x
- */
-
-// 查看配置：File -> Project Structure
-// - SDK Location: 检查Android SDK路径
-// - Project: 检查Gradle和JDK版本
-// - Modules: 检查编译SDK版本
+```text
+检查清单：
+- Python: 3.11.x
+- Node.js: LTS（如涉及前端）
+- 包管理: uv/poetry/pip 与锁定文件
+- 数据库: Postgres/MySQL/SQLite
+- Redis/消息队列（按需）
 ```
 
 ### 1.3 配置文件设置
-```properties
-# local.properties (不要提交到Git)
-sdk.dir=/Users/yourname/Library/Android/sdk
-# API密钥配置
-GEMINI_API_KEY=your_gemini_api_key_here
-GPT_API_KEY=your_gpt_api_key_here
+```env
+# .env（不要提交到Git）
+DATABASE_URL=postgresql://user:pass@host:5432/db
+REDIS_URL=redis://host:6379/0
+API_KEY=xxxxx
 
-# gradle.properties
-# 内存配置，提高构建速度
-org.gradle.jvmargs=-Xmx4096m -XX:+UseParallelGC
-org.gradle.parallel=true
-org.gradle.caching=true
-# 使用国内镜像
-ALIYUN_MAVEN_URL=https://maven.aliyun.com/repository/public
+# pyproject.toml（片段）
+[tool.ruff]
+line-length = 100
+
+[tool.mypy]
+python_version = "3.11"
 ```
 
 ## 2. 运行项目
 
 ### 2.1 运行配置
-```kotlin
-/**
- * 运行配置步骤：
- * 1. 点击顶部工具栏的设备选择器
- * 2. 选择模拟器或真机
- * 3. 点击绿色运行按钮（Shift+F10）
- * 
- * 推荐测试设备：
- * - 模拟器：Pixel 5 (API 31)
- * - 屏幕尺寸：用于测试手机适配
- * - 平板模拟器：Pixel C (API 31)
- * - 屏幕尺寸：用于测试平板适配
- */
+```bash
+uv run uvicorn app.presentation.api.main:app --host 0.0.0.0 --port 8080 --reload
 ```
 
-### 2.2 创建模拟器
-```
-1. Tools -> AVD Manager
-2. Create Virtual Device
-3. 选择设备：
-   - Phone -> Pixel 5 (适合测试手机)
-   - Tablet -> Pixel C (适合测试平板)
-4. 选择系统镜像：
-   - API 31 (Android 12) - 推荐
-   - 下载x86_64镜像以获得更好性能
-5. 配置选项：
-   - RAM: 2048MB
-   - Internal Storage: 2048MB
-   - 启用硬件加速
+### 2.2 前端
+```bash
+pnpm install && pnpm dev  # 或 npm/yarn
 ```
 
-### 2.3 真机调试
-```kotlin
-/**
- * 真机调试设置：
- * 
- * 1. 手机端设置：
- *    - 设置 -> 关于手机 -> 连续点击"版本号"7次
- *    - 设置 -> 开发者选项 -> 启用"USB调试"
- * 
- * 2. 连接设备：
- *    - 使用USB线连接手机和电脑
- *    - 在手机上允许USB调试
- *    - Android Studio会自动识别设备
- * 
- * 3. 无线调试（Android 11+）：
- *    - 开发者选项 -> 无线调试
- *    - 使用配对码配对
- *    - adb connect 192.168.x.x:port
- */
+### 2.3 本地调试
+```text
+- Swagger UI/Redoc 文档联调
+- Postman/Insomnia API 测试
+- httpx/pytest-asyncio 自动化
 ```
 
 ## 3. 功能入口导航
 
-### 3.1 应用架构概览
-```kotlin
-/**
- * AI启蒙时光 - 功能入口地图
- * 
- * MainActivity (主入口)
- *     │
- *     ├── HomeScreen (首页)
- *     │   ├── 故事生成入口 -> StoryScreen
- *     │   ├── 智能对话入口 -> DialogueScreen
- *     │   ├── 拍照识别入口 -> CameraScreen
- *     │   └── 个人中心入口 -> ProfileScreen
- *     │
- *     └── ParentLoginScreen (家长入口)
- *         └── ParentDashboardScreen
- *             ├── 学习报告
- *             ├── 时间限制设置
- *             ├── 内容偏好设置
- *             └── 隐私设置
- */
+### 3.1 服务与路由
+```text
+app/presentation/api: FastAPI 路由层
+app/application: 用例层
+app/domain: 领域模型与接口
+app/infrastructure: DB/缓存/外部客户端
 ```
 
-### 3.2 快速定位功能代码
-```kotlin
-// 使用Android Studio快捷键快速定位：
-
-// 1. 查找类（Cmd+O / Ctrl+N）
-"StoryScreen" -> 故事界面
-"DialogueScreen" -> 对话界面
-"CameraScreen" -> 相机界面
-
-// 2. 查找文件（Cmd+Shift+O / Ctrl+Shift+N）
-"navigation" -> 导航配置
-"theme" -> 主题配置
-
-// 3. 全局搜索（Cmd+Shift+F / Ctrl+Shift+F）
-"generateStory" -> 故事生成功能
-"sendMessage" -> 对话发送功能
-"captureImage" -> 拍照功能
-
-// 4. 查找使用（Cmd+B / Ctrl+B）
-// 在函数名上使用，查看所有调用位置
+### 3.2 快速定位
+```text
+搜索路由路径/端点函数名；依功能分层检索（presentation/application/domain/infrastructure）
 ```
 
 ### 3.3 导航结构代码

@@ -1,4 +1,4 @@
-# 发布流程SOP
+# 发布流程SOP（Docker/K8s，Python 3.11 Web）
 
 ## 目的
 建立标准化的发布流程，确保每次发布都安全、可靠、可追溯。
@@ -9,25 +9,17 @@
 graph LR
     A[版本规划] --> B[功能冻结]
     B --> C[测试验证]
-    C --> D[发布准备]
-    D --> E[灰度发布]
+    C --> D[镜像构建/签名/SBOM]
+    D --> E[灰度发布(K8s/金丝雀/蓝绿)]
     E --> F[全量发布]
-    F --> G[发布监控]
-    G --> H[发布总结]
+    F --> G[实时监控(APM/Logs/Metrics/Trace)]
+    G --> H[发布复盘]
 ```
 
 ## 1. 版本规划
 
 ### 1.1 版本号规范
-```
-主版本号.次版本号.修订号 (Major.Minor.Patch)
-
-示例：
-- 1.0.0：首次发布
-- 1.1.0：新增功能
-- 1.1.1：Bug修复
-- 2.0.0：重大更新
-```
+遵循 SemVer：主.次.修订（Major.Minor.Patch）
 
 ### 1.2 发布周期
 - **大版本**: 3-6个月
@@ -124,29 +116,33 @@ git push origin release/1.2.0
 
 ### 3.2 自动化测试
 ```bash
-# 运行所有测试
-./gradlew test
-./gradlew connectedAndroidTest
-
-# 生成测试报告
-./gradlew jacocoTestReport
-
-# 检查测试覆盖率
-./gradlew jacocoTestCoverageVerification
+uv run ruff . && uv run mypy .
+uv run coverage run -m pytest && uv run coverage report --fail-under=80
+uv run pip-audit -P || true
+uv run bandit -q -r app || true
 ```
 
 ## 4. 发布准备
 
-### 4.1 构建发布版本
+### 4.1 镜像构建
+```dockerfile
+# Dockerfile（示例）
+FROM python:3.11-slim AS base
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+WORKDIR /app
+COPY pyproject.toml poetry.lock* requirements*.txt* /app/
+RUN pip install --no-cache-dir -U pip && \
+    (pip install --no-cache-dir uv || true) && \
+    (uv pip install -r requirements.txt || pip install -r requirements.txt)
+COPY . /app
+CMD ["uvicorn", "app.presentation.api.main:app", "--host", "0.0.0.0", "--port", "8080"]
+```
+
 ```bash
-# 清理构建
-./gradlew clean
-
-# 构建Release APK
-./gradlew assembleRelease
-
-# 构建App Bundle
-./gradlew bundleRelease
+# 构建与签名（示例）
+docker build -t registry.example.com/app:${GIT_SHA} .
+cosign sign --key cosign.key registry.example.com/app:${GIT_SHA}
+syft packages registry.example.com/app:${GIT_SHA} -o spdx-json > sbom.json
 ```
 
 ### 4.2 签名配置
@@ -218,40 +214,11 @@ android {
 ## 5. 灰度发布
 
 ### 5.1 灰度策略
-```markdown
-## 阶段式发布
-1. 内部测试 (100人)
-   - 公司员工
-   - 持续2天
-   
-2. 小范围灰度 (5%)
-   - 种子用户
-   - 持续3天
-   
-3. 中等灰度 (20%)
-   - 活跃用户
-   - 持续3天
-   
-4. 大范围灰度 (50%)
-   - 一般用户
-   - 持续2天
-   
-5. 全量发布 (100%)
-   - 所有用户
-```
+K8s Deployment 使用分批/金丝雀/蓝绿发布；按流量或实例比例推进，实时回看指标。
 
 ### 5.2 监控指标
-```kotlin
-// 关键监控指标
-data class ReleaseMetrics(
-    val crashRate: Float,        // 崩溃率 < 0.1%
-    val anrRate: Float,          // ANR率 < 0.05%
-    val startupTime: Long,       // 启动时间 < 3s
-    val memoryUsage: Int,        // 内存使用 < 150MB
-    val retentionRate: Float,    // 留存率 > 80%
-    val userRating: Float        // 用户评分 > 4.0
-)
-```
+- 错误率、P95/P99 延迟、吞吐、资源占用
+- 业务关键指标（转化、留存、活跃）
 
 ### 5.3 灰度控制
 ```kotlin
@@ -275,22 +242,8 @@ class RemoteConfig {
 - [ ] 客服团队准备
 
 ### 6.2 发布操作
-```bash
-# Google Play Console
-1. 登录 https://play.google.com/console
-2. 选择应用
-3. 版本管理 > 应用版本
-4. 上传APK/AAB
-5. 填写版本说明
-6. 提交审核
-
-# 国内应用商店
-- 华为应用市场
-- 小米应用商店
-- OPPO软件商店
-- VIVO应用商店
-- 应用宝
-```
+- 容器注册表推送、签名验证（Cosign）
+- 部署：ArgoCD/GitOps 或 kubectl/helm
 
 ### 6.3 发布通知
 ```markdown
@@ -324,24 +277,9 @@ AI启蒙时光 v1.2.0 已于 2024-01-15 15:00 正式发布。
 ## 7. 发布监控
 
 ### 7.1 实时监控
-```kotlin
-// Crashlytics监控
-FirebaseCrashlytics.getInstance().apply {
-    setCustomKey("version", BuildConfig.VERSION_NAME)
-    setCustomKey("release_date", "2024-01-15")
-    setUserId(userId)
-}
-
-// Performance监控
-FirebasePerformance.getInstance().apply {
-    isPerformanceCollectionEnabled = true
-    newTrace("app_startup").apply {
-        start()
-        // 启动逻辑
-        stop()
-    }
-}
-```
+- 日志：结构化 JSON，集中收集（ELK/Datadog/Cloud Logging）
+- 指标：Prometheus/Grafana，错误率/延迟/吞吐/资源
+- 追踪：OpenTelemetry + backend（Tempo/Jaeger/Datadog）
 
 ### 7.2 监控仪表板
 ```markdown
@@ -445,14 +383,8 @@ FirebasePerformance.getInstance().apply {
 
 ### 9.2 回滚操作
 ```bash
-# Google Play回滚
-1. 进入版本管理
-2. 选择之前的稳定版本
-3. 点击"推广此版本"
-4. 确认回滚
-
-# 通知用户
-推送通知："检测到问题，建议暂不更新"
+# 回滚到上一个稳定镜像（示例）
+kubectl rollout undo deployment/app-deploy
 ```
 
 ## 最佳实践
@@ -473,5 +405,5 @@ FirebasePerformance.getInstance().apply {
 
 ---
 
-*基于AI启蒙时光项目发布经验*  
+*面向 Python 3.11 Web 的发布经验*  
 *确保每次发布都平稳可靠*

@@ -1,4 +1,4 @@
-# 调试与问题修复SOP
+# 调试与问题修复SOP（Python 3.11 Web）
 
 ## 目的
 提供系统化的调试方法和常见问题的修复方案，帮助开发者快速定位和解决问题。
@@ -6,120 +6,22 @@
 ## 1. 调试工具箱
 
 ### 1.1 基础调试工具配置
-```kotlin
-/**
- * 调试工具初始化
- * 位置：Application类
- */
-class EnlightenmentApp : Application() {
-    override fun onCreate() {
-        super.onCreate()
-        
-        // 1. Timber日志配置
-        if (BuildConfig.DEBUG) {
-            Timber.plant(object : Timber.DebugTree() {
-                override fun createStackElementTag(element: StackTraceElement): String {
-                    // 自定义日志标签，包含类名和行号
-                    return "${super.createStackElementTag(element)}:${element.lineNumber}"
-                }
-            })
-        }
-        
-        // 2. StrictMode配置（仅调试版本）
-        if (BuildConfig.DEBUG) {
-            StrictMode.setThreadPolicy(
-                StrictMode.ThreadPolicy.Builder()
-                    .detectDiskReads()
-                    .detectDiskWrites()
-                    .detectNetwork()
-                    .penaltyLog()
-                    .build()
-            )
-            StrictMode.setVmPolicy(
-                StrictMode.VmPolicy.Builder()
-                    .detectActivityLeaks()
-                    .detectLeakedClosableObjects()
-                    .penaltyLog()
-                    .build()
-            )
-        }
-        
-        // 3. LeakCanary自动初始化（添加依赖后自动工作）
-    }
-}
+```text
+- 日志：structlog/loguru，输出 JSON，包含 request_id/trace_id
+- 本地：uvicorn --reload 打印栈与请求日志
+- APM：OpenTelemetry + Exporter（Jaeger/Tempo/Datadog）
 ```
 
 ### 1.2 网络调试配置
-```kotlin
-/**
- * OkHttp调试拦截器
- * 位置：NetworkModule
- */
-@Module
-@InstallIn(SingletonComponent::class)
-object NetworkModule {
-    
-    @Provides
-    @Singleton
-    fun provideOkHttpClient(): OkHttpClient {
-        return OkHttpClient.Builder().apply {
-            // 1. 日志拦截器
-            if (BuildConfig.DEBUG) {
-                val loggingInterceptor = HttpLoggingInterceptor { message ->
-                    // 使用Timber输出网络日志
-                    Timber.tag("OkHttp").d(message)
-                }.apply {
-                    level = HttpLoggingInterceptor.Level.BODY
-                }
-                addInterceptor(loggingInterceptor)
-            }
-            
-            // 2. Chuck/Chucker网络监控（可选）
-            if (BuildConfig.DEBUG) {
-                // addInterceptor(ChuckerInterceptor(context))
-            }
-            
-            // 3. 自定义调试拦截器
-            addInterceptor(DebugInterceptor())
-            
-            // 4. 超时设置
-            connectTimeout(30, TimeUnit.SECONDS)
-            readTimeout(30, TimeUnit.SECONDS)
-        }.build()
-    }
-}
+```python
+import httpx
 
-/**
- * 自定义调试拦截器
- * 记录请求耗时和错误信息
- */
-class DebugInterceptor : Interceptor {
-    override fun intercept(chain: Interceptor.Chain): Response {
-        val request = chain.request()
-        val startTime = System.currentTimeMillis()
-        
-        Timber.d("🌐 API请求: ${request.method} ${request.url}")
-        Timber.d("📤 请求头: ${request.headers}")
-        
-        return try {
-            val response = chain.proceed(request)
-            val duration = System.currentTimeMillis() - startTime
-            
-            Timber.d("✅ API响应: ${response.code} (${duration}ms)")
-            
-            // 记录慢请求
-            if (duration > 3000) {
-                Timber.w("⚠️ 慢请求警告: ${request.url} 耗时 ${duration}ms")
-            }
-            
-            response
-        } catch (e: Exception) {
-            val duration = System.currentTimeMillis() - startTime
-            Timber.e(e, "❌ API请求失败: ${request.url} (${duration}ms)")
-            throw e
-        }
-    }
-}
+
+async def traced_get(url: str) -> dict:
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        r = await client.get(url)
+        r.raise_for_status()
+        return r.json()
 ```
 
 ## 2. 常见问题诊断与修复
@@ -252,70 +154,11 @@ class SafeRepository {
 }
 ```
 
-### 2.3 ANR（应用无响应）问题
-```kotlin
-/**
- * ANR问题诊断与解决
- */
-
-// 1. 检测主线程阻塞
-class ANRWatchdog : Thread() {
-    
-    @Volatile
-    private var tick = 0
-    private val threshold = 5000  // 5秒阈值
-    
-    private val ticker = Runnable {
-        tick = (tick + 1) % Int.MAX_VALUE
-    }
-    
-    override fun run() {
-        while (!isInterrupted) {
-            val lastTick = tick
-            Handler(Looper.getMainLooper()).post(ticker)
-            
-            Thread.sleep(threshold)
-            
-            if (tick == lastTick) {
-                // 主线程被阻塞
-                Timber.e("⚠️ 检测到ANR！主线程被阻塞超过${threshold}ms")
-                // 获取主线程堆栈
-                val stackTrace = Looper.getMainLooper().thread.stackTrace
-                stackTrace.forEach { element ->
-                    Timber.e("  at $element")
-                }
-            }
-        }
-    }
-}
-
-// 2. 避免ANR的最佳实践
-
-// ❌ 错误：主线程执行耗时操作
-class BadActivity : AppCompatActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        
-        // 主线程读取大文件 - 导致ANR！
-        val data = File("/sdcard/large_file.txt").readText()
-    }
-}
-
-// ✅ 正确：使用协程处理耗时操作
-class GoodActivity : AppCompatActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        
-        lifecycleScope.launch {
-            // IO线程读取文件
-            val data = withContext(Dispatchers.IO) {
-                File("/sdcard/large_file.txt").readText()
-            }
-            // 回到主线程更新UI
-            updateUI(data)
-        }
-    }
-}
+### 2.3 卡顿/阻塞
+```text
+- 异步端点避免阻塞式 requests/IO
+- 数据库慢查询：开启 SQL 日志与分析索引
+- 外部依赖慢：增加超时与重试/熔断
 ```
 
 ### 2.4 Compose UI问题调试

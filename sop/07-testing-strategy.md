@@ -1,4 +1,4 @@
-# 测试策略SOP
+# 测试策略SOP（Python 3.11 Web）
 
 ## 目的
 建立全面的测试策略，确保软件质量，减少缺陷，提升用户体验。
@@ -8,21 +8,21 @@
 ```
                 /\
                /  \
-              / E2E \           (10%)
+              / E2E \           (10%)  Playwright/pytest + dockerized deps
              /______\
-            /  集成  \          (20%)
+            /  集成  \          (20%)  httpx + Test DB/containers
            /________\
-          /   单元    \         (70%)
+          /   单元    \         (70%)  pytest/pytest-asyncio
          /__________\
 ```
 
 ## 1. 单元测试
 
 ### 1.1 测试范围
-- **ViewModel**: 业务逻辑和状态管理
-- **UseCase**: 用例逻辑
-- **Repository**: 数据处理逻辑
-- **Utility**: 工具类和扩展函数
+- **UseCase**: 业务编排逻辑
+- **Repository**: 数据访问与适配
+- **Schema/DTO**: Pydantic 校验与转换
+- **Utilities**: 工具函数
 
 ### 1.2 测试原则
 - **F.I.R.S.T原则**
@@ -32,72 +32,22 @@
   - **S**elf-validating: 自我验证
   - **T**imely: 及时编写
 
-### 1.3 测试示例
+### 1.3 测试示例（UseCase）
+```python
+import pytest
 
-#### ViewModel测试
-```kotlin
-@ExperimentalCoroutinesApi
-class StoryViewModelTest {
-    
-    @get:Rule
-    val instantExecutorRule = InstantTaskExecutorRule()
-    
-    @get:Rule
-    val mainDispatcherRule = MainDispatcherRule()
-    
-    private lateinit var generateStoryUseCase: GenerateStoryUseCase
-    private lateinit var viewModel: StoryViewModel
-    
-    @Before
-    fun setup() {
-        generateStoryUseCase = mockk()
-        viewModel = StoryViewModel(generateStoryUseCase)
-    }
-    
-    @Test
-    fun `生成故事成功时应更新UI状态`() = runTest {
-        // Given - 准备测试数据
-        val topic = "恐龙"
-        val expectedStory = Story(
-            id = "1",
-            title = "小恐龙历险记",
-            content = "很久很久以前...",
-            questions = listOf(
-                Question("恐龙吃什么？", listOf("草", "肉", "都吃"), 2)
-            )
-        )
-        coEvery { generateStoryUseCase(topic) } returns Result.success(expectedStory)
-        
-        // When - 执行测试动作
-        viewModel.generateStory(topic)
-        advanceUntilIdle()
-        
-        // Then - 验证结果
-        val state = viewModel.uiState.value
-        assertThat(state.isLoading).isFalse()
-        assertThat(state.story).isEqualTo(expectedStory)
-        assertThat(state.error).isNull()
-    }
-    
-    @Test
-    fun `网络错误时应显示友好提示`() = runTest {
-        // Given
-        val topic = "恐龙"
-        coEvery { generateStoryUseCase(topic) } returns Result.failure(
-            NetworkException("网络连接失败")
-        )
-        
-        // When
-        viewModel.generateStory(topic)
-        advanceUntilIdle()
-        
-        // Then
-        val state = viewModel.uiState.value
-        assertThat(state.isLoading).isFalse()
-        assertThat(state.error).isEqualTo("网络不太好，请稍后再试")
-        assertThat(state.story).isNull()
-    }
-}
+
+@pytest.mark.asyncio
+async def test_use_case_generates_story():
+    from app.application.use_cases.generate_story import GenerateStoryUseCase
+
+    class FakeRepo:
+        async def generate(self, topic: str):
+            from app.domain.models import Story
+            return Story(id="1", title="t", content="c")
+
+    story = await GenerateStoryUseCase(FakeRepo())("恐龙")
+    assert story.id
 ```
 
 #### Repository测试
@@ -176,56 +126,16 @@ coEvery { mockService.search(capture(slot)) } returns emptyList()
 // 使用后检查: slot.captured
 ```
 
-## 2. UI测试
+## 2. E2E/UI 测试
 
-### 2.1 Compose UI测试
-```kotlin
-class HomeScreenTest {
-    
-    @get:Rule
-    val composeTestRule = createComposeRule()
-    
-    @Test
-    fun 首页应显示所有功能按钮() {
-        // Given
-        composeTestRule.setContent {
-            AIEnlightenmentTheme {
-                HomeScreen(
-                    onNavigateToStory = {},
-                    onNavigateToDialogue = {},
-                    onNavigateToCamera = {},
-                    onNavigateToProfile = {}
-                )
-            }
-        }
-        
-        // Then
-        composeTestRule.onNodeWithText("故事世界").assertIsDisplayed()
-        composeTestRule.onNodeWithText("智能对话").assertIsDisplayed()
-        composeTestRule.onNodeWithText("探索相机").assertIsDisplayed()
-        composeTestRule.onNodeWithText("我的").assertIsDisplayed()
-    }
-    
-    @Test
-    fun 点击故事按钮应触发导航() {
-        // Given
-        var navigateCalled = false
-        composeTestRule.setContent {
-            HomeScreen(
-                onNavigateToStory = { navigateCalled = true },
-                onNavigateToDialogue = {},
-                onNavigateToCamera = {},
-                onNavigateToProfile = {}
-            )
-        }
-        
-        // When
-        composeTestRule.onNodeWithText("故事世界").performClick()
-        
-        // Then
-        assertThat(navigateCalled).isTrue()
-    }
-}
+### 2.1 Playwright 示例（前端）
+```ts
+import { test, expect } from '@playwright/test';
+
+test('首页加载并显示导航', async ({ page }) => {
+  await page.goto('http://localhost:3000');
+  await expect(page.getByText('首页')).toBeVisible();
+});
 ```
 
 ### 2.2 测试ID最佳实践
@@ -244,249 +154,71 @@ composeTestRule.onNodeWithTag("generate_story_button").performClick()
 
 ## 3. 集成测试
 
-### 3.1 API集成测试
-```kotlin
-class ApiIntegrationTest {
-    
-    private lateinit var mockWebServer: MockWebServer
-    private lateinit var apiService: ApiService
-    
-    @Before
-    fun setup() {
-        mockWebServer = MockWebServer()
-        apiService = Retrofit.Builder()
-            .baseUrl(mockWebServer.url("/"))
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-            .create(ApiService::class.java)
-    }
-    
-    @After
-    fun tearDown() {
-        mockWebServer.shutdown()
-    }
-    
-    @Test
-    fun `成功响应应正确解析`() = runTest {
-        // Given
-        val mockResponse = MockResponse()
-            .setResponseCode(200)
-            .setBody("""
-                {
-                    "id": "123",
-                    "title": "测试故事",
-                    "content": "这是测试内容"
-                }
-            """)
-        mockWebServer.enqueue(mockResponse)
-        
-        // When
-        val response = apiService.getStory("123")
-        
-        // Then
-        assertThat(response.id).isEqualTo("123")
-        assertThat(response.title).isEqualTo("测试故事")
-    }
-    
-    @Test
-    fun `网络错误应抛出异常`() = runTest {
-        // Given
-        mockWebServer.enqueue(MockResponse().setResponseCode(500))
-        
-        // When & Then
-        assertThrows<HttpException> {
-            apiService.getStory("123")
-        }
-    }
-}
+### 3.1 API集成测试（httpx + FastAPI TestClient）
+```python
+from fastapi.testclient import TestClient
+from app.presentation.api.main import app
+
+
+def test_health():
+    c = TestClient(app)
+    r = c.get('/health')
+    assert r.status_code == 200
 ```
 
-### 3.2 数据库集成测试
-```kotlin
-@RunWith(AndroidJUnit4::class)
-class DatabaseIntegrationTest {
-    
-    private lateinit var database: AppDatabase
-    private lateinit var storyDao: StoryDao
-    
-    @Before
-    fun setup() {
-        val context = ApplicationProvider.getApplicationContext<Context>()
-        database = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java)
-            .allowMainThreadQueries()
-            .build()
-        storyDao = database.storyDao()
-    }
-    
-    @After
-    fun tearDown() {
-        database.close()
-    }
-    
-    @Test
-    fun 插入和查询故事应正常工作() = runTest {
-        // Given
-        val story = StoryEntity(
-            id = "test-1",
-            title = "测试故事",
-            content = "测试内容",
-            createdAt = System.currentTimeMillis()
-        )
-        
-        // When
-        storyDao.insert(story)
-        val stories = storyDao.getAllStories()
-        
-        // Then
-        assertThat(stories).hasSize(1)
-        assertThat(stories[0].id).isEqualTo("test-1")
-    }
-}
+### 3.2 数据库集成测试（SQLite 内存库示例）
+```python
+import pytest
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+
+@pytest.fixture()
+def session():
+    engine = create_engine('sqlite+pysqlite:///:memory:', echo=False, future=True)
+    TestingSessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+    with TestingSessionLocal() as s:
+        yield s
 ```
 
 ## 4. 端到端测试
 
 ### 4.1 用户流程测试
-```kotlin
-@LargeTest
-@RunWith(AndroidJUnit4::class)
-class UserJourneyTest {
-    
-    @get:Rule
-    val activityRule = ActivityScenarioRule(MainActivity::class.java)
-    
-    @Test
-    fun 完整的故事生成流程() {
-        // 1. 启动应用
-        onView(withText("AI启蒙时光")).check(matches(isDisplayed()))
-        
-        // 2. 点击故事功能
-        onView(withText("故事世界")).perform(click())
-        
-        // 3. 输入主题
-        onView(withId(R.id.topic_input))
-            .perform(typeText("小兔子"), closeSoftKeyboard())
-        
-        // 4. 生成故事
-        onView(withText("生成故事")).perform(click())
-        
-        // 5. 等待加载完成
-        Thread.sleep(3000) // 实际项目中使用IdlingResource
-        
-        // 6. 验证故事显示
-        onView(withText("小兔子")).check(matches(isDisplayed()))
-        
-        // 7. 回答问题
-        onView(withText("下一题")).perform(click())
-        
-        // 8. 完成故事
-        onView(withText("完成")).check(matches(isDisplayed()))
-    }
-}
-```
+后端：使用 TestClient 走完关键业务链路；前端：使用 Playwright 覆盖关键路径。
 
 ## 5. 性能测试
 
-### 5.1 基准测试
-```kotlin
-@RunWith(AndroidJUnit4::class)
-class PerformanceBenchmark {
-    
-    @get:Rule
-    val benchmarkRule = BenchmarkRule()
-    
-    @Test
-    fun measureStoryGeneration() {
-        benchmarkRule.measureRepeated {
-            runBlocking {
-                // 测试故事生成性能
-                val useCase = GenerateStoryUseCase(repository)
-                useCase.invoke("test")
-            }
-        }
-    }
-}
-```
+### 5.1 基准/性能测试
+后端：locust/k6 压测关键接口，观察 P95 延迟、错误率、吞吐。
 
-### 5.2 内存泄漏检测
-```kotlin
-class MemoryLeakTest {
-    
-    @Test
-    fun viewModelShouldNotLeakActivity() {
-        // 使用LeakCanary检测
-        val scenario = launchActivity<MainActivity>()
-        
-        scenario.onActivity { activity ->
-            // 获取ViewModel引用
-            val viewModel = ViewModelProvider(activity).get(MainViewModel::class.java)
-            
-            // 模拟配置变更
-            activity.recreate()
-            
-            // 确保旧Activity被回收
-            assertThat(activity.isDestroyed).isTrue()
-        }
-    }
-}
-```
+### 5.2 资源与内存
+监控进程内存与文件句柄，关注连接池与未关闭资源；容器限制合理配置。
 
 ## 6. 测试数据管理
 
 ### 6.1 测试数据工厂
-```kotlin
-object TestDataFactory {
-    
-    fun createStory(
-        id: String = "test-${UUID.randomUUID()}",
-        title: String = "测试故事",
-        content: String = "这是测试内容"
-    ) = Story(id, title, content, emptyList())
-    
-    fun createUser(
-        name: String = "测试用户",
-        age: Int = 5
-    ) = User(name, age)
-    
-    fun createStoryList(count: Int = 3) = List(count) { index ->
-        createStory(
-            id = "test-$index",
-            title = "故事$index"
-        )
-    }
-}
+```python
+from faker import Faker
+
+fake = Faker()
+
+def make_user():
+    return {"name": fake.name(), "email": fake.email()}
 ```
 
 ### 6.2 测试配置
-```kotlin
-// 测试专用配置
-object TestConfig {
-    const val MOCK_API_URL = "http://localhost:8080/"
-    const val TEST_TIMEOUT = 5000L
-    const val TEST_USER_TOKEN = "test-token-123"
-}
-
-// 测试规则
-class TestCoroutineRule : TestWatcher() {
-    override fun starting(description: Description?) {
-        Dispatchers.setMain(TestCoroutineDispatcher())
-    }
-    
-    override fun finished(description: Description?) {
-        Dispatchers.resetMain()
-    }
-}
+```ini
+# pytest.ini
+[pytest]
+addopts = -q --disable-warnings
 ```
 
 ## 7. 测试报告
 
 ### 7.1 覆盖率报告
 ```bash
-# 生成测试覆盖率报告
-./gradlew jacocoTestReport
-
-# 查看报告
-open app/build/reports/jacoco/test/html/index.html
+coverage run -m pytest
+coverage html  # 生成 HTML 报告
 ```
 
 ### 7.2 测试结果可视化
@@ -508,21 +240,7 @@ testOptions {
 ## 8. 持续测试
 
 ### 8.1 CI集成
-```yaml
-# GitHub Actions配置
-- name: Run Unit Tests
-  run: ./gradlew test
-  
-- name: Run UI Tests
-  run: ./gradlew connectedAndroidTest
-  
-- name: Upload Test Results
-  uses: actions/upload-artifact@v2
-  if: failure()
-  with:
-    name: test-results
-    path: app/build/reports/tests
-```
+参考开发流程中的 CI 配置，确保 ruff/mypy/pytest/coverage/pip-audit/bandit 均执行。
 
 ### 8.2 测试自动化
 ```kotlin
@@ -557,5 +275,5 @@ fi
 
 ---
 
-*基于AI启蒙时光项目测试实践*  
-*追求高质量和高覆盖率*
+*面向 Python 3.11 Web 的测试实践*  
+*追求高质量与高覆盖率*

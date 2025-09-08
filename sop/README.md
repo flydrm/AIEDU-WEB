@@ -91,14 +91,13 @@ graph LR
 ## 快速开始
 
 1. **新项目启动**
-   - 使用[需求文档模板](./templates/requirements-template.md)
-   - 定义[API 合同（OpenAPI）](./templates/api-contract-template.md)
+   - 定义 API 合同（OpenAPI）并存档在仓库（如 docs/openapi/）
    - 参考[架构设计SOP](./03-architecture-design.md)
    - 遵循[开发流程SOP](./05-development-process.md)
    - 配置[开发环境（Python/Web）](./10-dev-environment-guide.md)
 
 2. **日常开发**
-   - 查看[开发检查清单](./checklists/development-checklist.md)
+   - 使用团队开发检查清单（建议放在项目根 docs/ 或 wiki）
    - 使用[功能定位指南（API/路由/服务）](./12-feature-navigation-guide.md)
    - 参考[调试指南](./11-debugging-troubleshooting.md)
    - 执行[代码审查SOP](./06-code-review.md)
@@ -106,7 +105,7 @@ graph LR
 
 3. **版本发布**
    - 遵循[发布流程SOP](./08-release-process.md)
-   - 完成[发布检查清单](./checklists/release-checklist.md)
+   - 使用发布检查清单（建议放在项目根 docs/ 或 wiki）
    - 构建与发布镜像（Docker），部署（K8s/Serverless/VM）
    - 灰度与回滚策略、观测（APM/Logs/Metrics/Tracing）
 

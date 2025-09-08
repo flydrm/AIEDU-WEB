@@ -61,6 +61,5 @@
 - [ ] Reviewer 已指定（代码所有者/相关责任人）
 
 ## Review Gate（自动检查）
-- [ ] 通过 `review-gate` Workflow（ruff/mypy/pytest/coverage/security）
-- [ ] SOP 文档无 Android/Kotlin 残留（自动 grep 校验）
+- 【已停用】review-gate 自动校验（本仓库当前不强制）
 

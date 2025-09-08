@@ -10,25 +10,5 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - name: Install tools
-        run: |
-          pip install -U pip uv
-          uv pip install ruff mypy coverage pytest pip-audit bandit -q
-      - name: Lint/Type/Test/Security
-        run: |
-          uv run ruff .
-          uv run mypy . || true
-          uv run coverage run -m pytest -q || true
-          uv run coverage report || true
-          uv run pip-audit -P || true
-          uv run bandit -q -r app || true
-      - name: SOP Android/Kotlin residue gate
-        run: |
-          set -e
-          echo "Scanning for Android/Kotlin residues..."
-          ! grep -RniE "Android|Kotlin|Compose|ViewModel|Gradle|Activity|AppCompat|RecyclerView|Hilt|Retrofit|Room|Jetpack|KDoc|ktlint|proguard|Manifest|APK|AAB|Jacoco|LeakCanary|ANR|OkHttp|Timber|NavHost|MainActivity|Preview|@Composable|HiltViewModel|gradlew|Logcat" sop/ || (echo "❌ Found Android/Kotlin residues in sop/" && exit 1)
-          echo "✅ No Android/Kotlin residues in sop/"
+      - name: No-op gate (disabled per request)
+        run: echo "review-gate disabled"

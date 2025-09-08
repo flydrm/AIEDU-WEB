@@ -4,6 +4,8 @@ from app.presentation.api import mount_v1
 from app.infrastructure.ai.settings import load_providers
 from app.infrastructure.ai.clients import FailoverLLMRouter
 from app.application.use_cases.chat_completion import ChatCompletionUseCase
+import json
+from app.presentation.api.metrics import increment_requests_counter
 
 
 def create_app() -> FastAPI:
@@ -16,6 +18,7 @@ def create_app() -> FastAPI:
     @app.middleware("http")
     async def add_trace_id(request: Request, call_next):
         trace_id = request.headers.get("X-Trace-Id") or "trace-" + str(id(request))
+        increment_requests_counter()
         response = await call_next(request)
         response.headers["X-Trace-Id"] = trace_id
         return response
@@ -35,6 +38,12 @@ def create_app() -> FastAPI:
     app.state.chat_uc = (
         ChatCompletionUseCase(app.state.llm_router) if app.state.llm_router else None
     )
+    # load kids dataset for personalization if available
+    try:
+        with open("content/kids_3yo_dataset.json", "r", encoding="utf-8") as f:
+            app.state.kids_dataset = json.load(f)
+    except Exception:
+        app.state.kids_dataset = {"knowledge_cards": [], "story_prompts": []}
     return app
 
 

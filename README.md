@@ -22,3 +22,18 @@
 - [11 调试与问题修复](./sop/11-debugging-troubleshooting.md)
 - [12 功能入口快速定位](./sop/12-feature-navigation-guide.md)
 
+## 导出与资料
+
+- PMO/PM 需求分析（Markdown）：`./docs/requirements-analysis-mvp.md`
+- PMO/PM 需求分析（PDF）：`./docs/requirements-analysis-mvp.pdf`
+
+### 一键导出 PDF（需要 Node 环境）
+
+```bash
+# 安装工具依赖（首次）
+npm --prefix tools install
+
+# 将 Markdown 导出为 PDF
+node tools/md2pdf.js ./docs/requirements-analysis-mvp.md ./docs/requirements-analysis-mvp.pdf
+```
+

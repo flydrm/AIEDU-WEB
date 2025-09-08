@@ -5,7 +5,9 @@ from app.infrastructure.ai.settings import load_providers
 from app.infrastructure.ai.clients import FailoverLLMRouter
 from app.application.use_cases.chat_completion import ChatCompletionUseCase
 import json
-from app.presentation.api.metrics import increment_requests_counter
+import time
+from app.presentation.api.metrics import record_request_metrics
+from fastapi.middleware.cors import CORSMiddleware
 
 
 def create_app() -> FastAPI:
@@ -15,14 +17,27 @@ def create_app() -> FastAPI:
     async def health():
         return {"status": "ok"}
 
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"]
+    )
+
     @app.middleware("http")
     async def add_trace_id(request: Request, call_next):
         trace_id = request.headers.get("X-Trace-Id") or "trace-" + str(id(request))
-        increment_requests_counter()
+        start = time.perf_counter()
         # structured log (stdout)
         print({"ts": "", "path": request.url.path, "method": request.method, "trace_id": trace_id})
         response = await call_next(request)
+        duration = time.perf_counter() - start
         response.headers["X-Trace-Id"] = trace_id
+        try:
+            record_request_metrics(request.url.path, request.method, response.status_code, duration)
+        except Exception:
+            pass
         return response
 
     @app.exception_handler(Exception)

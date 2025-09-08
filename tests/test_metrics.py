@@ -10,4 +10,5 @@ def test_metrics_endpoint_exposes_counter():
     client.get("/health")
     r = client.get("/metrics")
     assert r.status_code == 200
-    assert "requests_total" in r.text
+    # Prom format with names
+    assert "http_requests_total" in r.text

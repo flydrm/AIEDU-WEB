@@ -1,4 +1,4 @@
-# 代码审查SOP
+# 代码审查SOP（Python 3.11 Web）
 
 ## 目的
 建立标准化的代码审查流程，提高代码质量，促进知识共享，减少缺陷。
@@ -60,72 +60,63 @@
 #### 2.1 审查重点
 
 ##### 功能正确性
-```kotlin
-// ❌ 错误示例：可能的空指针
-fun processData(data: String?) {
-    val length = data.length  // 可能崩溃
-}
+```python
+# ❌ 错误示例：未校验输入
+def process_data(data: dict) -> int:
+    return len(data["name"])  # KeyError 风险
 
-// ✅ 正确示例：空安全处理
-fun processData(data: String?) {
-    val length = data?.length ?: 0
-}
+# ✅ 正确示例：显式校验与类型标注
+from typing import Mapping
+
+def process_data(data: Mapping[str, str]) -> int:
+    name = data.get("name", "")
+    return len(name)
 ```
 
 ##### 代码质量
-```kotlin
-// ❌ 错误示例：过长的函数
-fun processUserData() {
-    // 100行代码...
-}
+```python
+# ❌ 错误示例：过长的函数
+def process_user_data(user):
+    # 100+ 行混杂逻辑...
+    ...
 
-// ✅ 正确示例：合理拆分
-fun processUserData() {
-    validateUser()
-    updateProfile()
-    sendNotification()
-}
+# ✅ 正确示例：分解职责
+def process_user_data(user):
+    validate_user(user)
+    profile = build_profile(user)
+    send_notification(profile)
 
-private fun validateUser() { /* ... */ }
-private fun updateProfile() { /* ... */ }
-private fun sendNotification() { /* ... */ }
+def validate_user(user): ...
+def build_profile(user): ...
+def send_notification(profile): ...
 ```
 
 ##### 性能问题
-```kotlin
-// ❌ 错误示例：主线程IO操作
-class MainActivity : AppCompatActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        val data = readFromFile()  // 阻塞主线程
-    }
-}
+```python
+# ❌ 错误示例：阻塞式 IO 混用在异步端点
+@app.get("/items")
+def list_items():
+    data = requests.get("http://.../slow").json()  # 阻塞
+    return data
 
-// ✅ 正确示例：异步处理
-class MainActivity : AppCompatActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        lifecycleScope.launch(Dispatchers.IO) {
-            val data = readFromFile()
-            withContext(Dispatchers.Main) {
-                updateUI(data)
-            }
-        }
-    }
-}
+# ✅ 正确示例：使用异步客户端
+import httpx
+
+@app.get("/items")
+async def list_items():
+    async with httpx.AsyncClient() as client:
+        resp = await client.get("http://.../slow")
+        return resp.json()
 ```
 
 ##### 安全问题
-```kotlin
-// ❌ 错误示例：硬编码敏感信息
-class ApiService {
-    private val apiKey = "sk-1234567890"  // 安全风险
-}
+```python
+# ❌ 错误示例：硬编码密钥
+API_KEY = "sk-1234567890"
 
-// ✅ 正确示例：从安全存储读取
-class ApiService {
-    private val apiKey = BuildConfig.API_KEY
-}
+# ✅ 正确示例：环境变量与密钥管理
+import os
+API_KEY = os.environ.get("API_KEY", "")
 ```
 
 #### 2.2 审查清单
@@ -341,15 +332,27 @@ git commit -m "fix: 解决PR评论中的空指针问题"
 
 ### 1. 自动化检查
 ```yaml
-# .github/workflows/pr-check.yml
-- name: Kotlin Lint
-  run: ./gradlew ktlintCheck
+# .github/workflows/pr-check.yml（片段）
+- name: Ruff
+  run: uv run ruff .
 
-- name: Detekt
-  run: ./gradlew detekt
+- name: Black/Isort
+  run: |
+    uv run black --check .
+    uv run isort --check-only .
 
-- name: Unit Tests
-  run: ./gradlew test
+- name: Mypy
+  run: uv run mypy .
+
+- name: Tests & Coverage
+  run: |
+    uv run coverage run -m pytest -q
+    uv run coverage report --fail-under=80
+
+- name: Security
+  run: |
+    uv run pip-audit -P || true
+    uv run bandit -q -r app || true
 ```
 
 ### 2. Review工具
@@ -386,5 +389,5 @@ git commit -m "fix: 解决PR评论中的空指针问题"
 
 ---
 
-*基于AI启蒙时光项目code review实践*  
-*强调建设性反馈和持续学习*
+*面向 Python 3.11 Web 的 Code Review 实践*  
+*强调建设性反馈与可维护性*

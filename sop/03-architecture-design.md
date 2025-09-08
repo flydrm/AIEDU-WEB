@@ -1,7 +1,7 @@
-# 架构设计SOP
+# 架构设计SOP（Python 3.11 Web）
 
 ## 目的
-建立标准化的架构设计流程，确保系统架构清晰、可扩展、易维护。
+建立标准化的架构设计流程，确保 Web 系统架构清晰、可扩展、易维护、可观测与安全合规。
 
 ## 架构设计原则
 
@@ -11,11 +11,12 @@
 - **DRY原则**: Don't Repeat Yourself - 避免重复
 - **YAGNI原则**: You Aren't Gonna Need It - 不要过度设计
 
-### 2. Android特定原则
-- **关注点分离**: UI逻辑、业务逻辑、数据逻辑分离
-- **数据驱动UI**: UI是数据的展现，数据变化驱动UI更新
-- **生命周期感知**: 正确处理Activity/Fragment生命周期
-- **依赖注入**: 降低耦合，提高可测试性
+### 2. Web特定原则
+- **分层解耦**: Presentation（API/前端）、Application（用例）、Domain（领域）、Infrastructure（存储/网络）
+- **契约优先**: OpenAPI 驱动接口设计与联调
+- **可观测性**: 日志结构化、指标、分布式追踪（OTel）
+- **配置外置**: 12-Factor（环境变量、不可变构建）
+- **依赖注入**: 降低耦合、提升可测性（FastAPI Depends、手写容器或punq）
 
 ## 架构设计流程
 
@@ -43,29 +44,42 @@
 
 ### 2. 架构选型
 
-#### 2.1 常见架构模式对比
-| 架构模式 | 优点 | 缺点 | 适用场景 |
-|---------|------|------|---------|
-| MVC | 简单直观 | 耦合度高 | 小型应用 |
-| MVP | 可测试性好 | 接口过多 | 中型应用 |
-| MVVM | 数据绑定，解耦 | 学习曲线 | 推荐使用 |
-| MVI | 单向数据流 | 复杂度高 | 大型应用 |
+#### 2.1 常见后端架构模式对比
+| 架构 | 优点 | 缺点 | 适用场景 |
+|------|------|------|---------|
+| 单体（分层） | 简单、部署快 | 规模变大复杂 | 中小型服务、原型 |
+| Clean/Hexagonal | 解耦强、可测性高 | 初期样板代码多 | 长期演进型项目 |
+| 微服务 | 独立伸缩、边界清晰 | 运维复杂 | 大型系统、团队分工 |
 
-#### 2.2 AI启蒙时光架构选择
-```kotlin
-// Clean Architecture + MVVM
-├── Presentation Layer (MVVM)
-│   ├── View (Compose UI)
-│   ├── ViewModel (状态管理)
-│   └── UI Model (UI状态)
-├── Domain Layer (业务逻辑)
-│   ├── UseCase (用例)
-│   ├── Repository Interface
-│   └── Domain Model
-└── Data Layer (数据处理)
-    ├── Repository Implementation
-    ├── Local Data Source (Room)
-    └── Remote Data Source (Retrofit)
+#### 2.2 推荐：Clean Architecture（FastAPI 示例）
+```
+project/
+├── app/
+│   ├── presentation/              # API 层（FastAPI 路由/依赖注入）
+│   │   ├── api/
+│   │   │   ├── v1/
+│   │   │   │   ├── stories.py    # 路由与入参/出参 Schema
+│   │   │   │   └── users.py
+│   │   └── deps.py                # 依赖注入与安全
+│   ├── application/               # 用例（服务编排）
+│   │   └── use_cases/
+│   │       └── generate_story.py
+│   ├── domain/                    # 领域模型与接口
+│   │   ├── models.py
+│   │   └── repositories.py        # 抽象仓库接口
+│   └── infrastructure/            # 实现（DB/缓存/第三方）
+│       ├── repositories/
+│       │   └── story_repository_impl.py
+│       ├── db/
+│       │   ├── base.py            # SQLAlchemy/SQLModel
+│       │   └── session.py
+│       └── clients/               # 外部服务客户端
+├── tests/
+│   ├── unit/
+│   ├── integration/
+│   └── e2e/
+├── pyproject.toml
+└── README.md
 ```
 
 ### 3. 详细设计
@@ -73,78 +87,69 @@
 #### 3.1 模块划分
 ```mermaid
 graph TD
-    A[App Module] --> B[Core Module]
-    A --> C[Feature Modules]
-    C --> D[Story Module]
-    C --> E[Dialogue Module]
-    C --> F[Camera Module]
-    C --> G[Profile Module]
-    B --> H[Network Module]
-    B --> I[Database Module]
-    B --> J[Common Module]
+    A[Presentation(API/前端)] --> B[Application(UseCases)]
+    B --> C[Domain(Models/Interfaces)]
+    C --> D[Infrastructure(DB/Cache/Clients)]
+    D --> E[Observability(Logs/Metrics/Trace)]
 ```
 
-#### 3.2 数据流设计
+#### 3.2 数据流设计（API 请求链）
 ```mermaid
 sequenceDiagram
-    participant UI as UI Layer
-    participant VM as ViewModel
+    participant Client as HTTP Client
+    participant API as FastAPI Router
     participant UC as UseCase
     participant Repo as Repository
-    participant API as API/Database
+    participant DB as DB/External
     
-    UI->>VM: User Action
-    VM->>UC: Execute UseCase
-    UC->>Repo: Get/Save Data
-    Repo->>API: Network/DB Call
-    API-->>Repo: Response
+    Client->>API: HTTP Request (JSON)
+    API->>UC: Validate & Call UseCase
+    UC->>Repo: Get/Save Data (Domain)
+    Repo->>DB: Query/Invoke External
+    DB-->>Repo: Result
     Repo-->>UC: Domain Model
-    UC-->>VM: Result
-    VM-->>UI: UI State Update
+    UC-->>API: DTO/Schema
+    API-->>Client: JSON Response
 ```
 
-#### 3.3 技术栈选择
+#### 3.3 技术栈选择（建议）
 ```yaml
-# 技术栈配置
-Language: Kotlin
-MinSDK: 24
-TargetSDK: 34
+runtime:
+  language: python==3.11
 
-UI:
-  - Jetpack Compose
-  - Material3
-  - Accompanist
+backend:
+  framework: fastapi
+  server: uvicorn[standard]
+  schema: pydantic v2
+  db: sqlalchemy/sqlmodel or prisma
+  cache: redis
+  broker: rabbitmq/kafka (可选)
+  auth: OAuth2/JWT
 
-Architecture:
-  - ViewModel
-  - LiveData/StateFlow
-  - Hilt (DI)
-  - Navigation Component
+frontend:
+  build: vite/next.js
+  package_manager: pnpm
 
-Network:
-  - Retrofit2
-  - OkHttp3
-  - Gson/Moshi
+quality:
+  lint: ruff
+  format: black, isort
+  types: mypy/pyright
+  test: pytest, pytest-asyncio, httpx
+  coverage: coverage.py (>= 80%)
+  security: pip-audit, bandit
+  contracts: openapi + schemathesis
 
-Database:
-  - Room
-  - DataStore
-
-Async:
-  - Coroutines
-  - Flow
-
-Testing:
-  - JUnit
-  - Mockk
-  - Espresso
+observability:
+  tracing: opentelemetry
+  metrics: prometheus + grafana
+  logging: structlog/loguru + json logs
 ```
 
 ### 4. 架构文档
 
 #### 4.1 架构决策记录（ADR）
 ```markdown
-# ADR-001: 使用Clean Architecture
+# ADR-001: 使用 Clean Architecture + FastAPI
 
 ## 状态
 已采纳
@@ -153,14 +158,14 @@ Testing:
 需要一个可维护、可测试、可扩展的架构
 
 ## 决策
-采用Clean Architecture + MVVM模式
+采用 Clean Architecture + FastAPI（路由薄、用例厚、仓库抽象）
 
 ## 理由
 1. 清晰的分层，职责明确
 2. 高可测试性
 3. 独立于框架
-4. 独立于UI
-5. 独立于数据库
+4. 独立于框架（接口隔离）
+5. 独立于数据库（仓库抽象）
 
 ## 后果
 - 正面：代码结构清晰，易于维护
@@ -186,8 +191,8 @@ Testing:
 ┌─────────────────────────────────────────────┐
 │                   Data                       │
 │  ┌─────────┐  ┌──────────┐  ┌──────────┐  │
-│  │  API    │  │   DAO    │  │Repository│  │
-│  │ Service │  │  (Room)  │  │   Impl   │  │
+│  │  API    │  │  DB/Cache│  │Repository│  │
+│  │ Router  │  │  Clients │  │   Impl   │  │
 │  └─────────┘  └──────────┘  └──────────┘  │
 └─────────────────────────────────────────────┘
 ```

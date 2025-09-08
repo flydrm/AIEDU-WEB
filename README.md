@@ -18,7 +18,7 @@
 - [07 测试策略](./sop/07-testing-strategy.md)
 - [08 发布流程](./sop/08-release-process.md)
 - [09 中文注释规范（重点）](./sop/09-comment-standards.md)
-- [10 Android Studio 指南](./sop/10-android-studio-guide.md)
+- [10 开发环境指南](./sop/10-dev-environment-guide.md)
 - [11 调试与问题修复](./sop/11-debugging-troubleshooting.md)
 - [12 功能入口快速定位](./sop/12-feature-navigation-guide.md)
 

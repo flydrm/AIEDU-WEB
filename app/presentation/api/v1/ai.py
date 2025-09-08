@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 from typing import Literal, List, Optional
+from fastapi.responses import StreamingResponse
 
 
 router = APIRouter(prefix="/api/v1/ai", tags=["AI"])
@@ -62,7 +63,12 @@ async def chat(req: ChatRequest, request: Request):
             usage=ChatUsage(prompt_tokens=0, completion_tokens=0, total_tokens=0),
         )
     payload = req.model_dump()
-    data = await chat_uc(payload)
-    # Basic passthrough (assumes OpenAI compatible)
-    return ChatResponse.model_validate(data)
+    if not req.stream:
+        data = await chat_uc(payload)
+        return ChatResponse.model_validate(data)
+    # stream branch
+    async def gen():
+        async for chunk in request.app.state.llm_router.stream_chat_completions(payload):
+            yield chunk
+    return StreamingResponse(gen(), media_type="text/event-stream")
 

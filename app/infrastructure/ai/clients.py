@@ -80,6 +80,49 @@ class OpenAICompatibleClient:
                     continue
                 raise TimeoutError("connect timeout")
 
+    async def stream_chat_completions(self, payload: dict[str, Any]):
+        url = f"{self.base_url}/v1/chat/completions"
+        headers = {"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"}
+        backoff = 0.1
+        for attempt in range(3):
+            try:
+                async with self._client.stream("POST", url, json=payload, headers=headers) as resp:
+                    if resp.status_code == 200:
+                        async for line in resp.aiter_lines():
+                            if not line:
+                                continue
+                            if not line.startswith("data:"):
+                                yield f"data: {line}\n\n"
+                            else:
+                                # passthrough including DONE
+                                yield line + "\n\n"
+                        return
+                    if resp.status_code == 429:
+                        if attempt < 2:
+                            await asyncio.sleep(backoff)
+                            backoff *= 2
+                            continue
+                        raise RateLimitError("rate limited")
+                    if 500 <= resp.status_code < 600:
+                        if attempt < 2:
+                            await asyncio.sleep(backoff)
+                            backoff *= 2
+                            continue
+                        raise ServerError(f"server error {resp.status_code}")
+                    raise ServerError(f"unexpected status {resp.status_code}")
+            except httpx.ReadTimeout:
+                if attempt < 2:
+                    await asyncio.sleep(backoff)
+                    backoff *= 2
+                    continue
+                raise TimeoutError("read timeout")
+            except httpx.ConnectTimeout:
+                if attempt < 2:
+                    await asyncio.sleep(backoff)
+                    backoff *= 2
+                    continue
+                raise TimeoutError("connect timeout")
+
 
 class FailoverLLMRouter:
     def __init__(self, providers: list[dict[str, Any]]) -> None:
@@ -98,6 +141,28 @@ class FailoverLLMRouter:
                 br.record_success()
                 await client.close()
                 return result
+            except Exception as e:  # noqa: BLE001
+                last_err = e
+                br.record_failure()
+            finally:
+                await client.close()
+        if last_err:
+            raise last_err
+        raise ServerError("no providers configured")
+
+    async def stream_chat_completions(self, payload: dict[str, Any]):
+        last_err: Exception | None = None
+        for idx, cfg in enumerate(self._providers):
+            br = self._breakers[idx]
+            if not br.allow():
+                continue
+            client = OpenAICompatibleClient(cfg["base_url"], cfg["api_key"], cfg.get("timeout", 30))
+            try:
+                async for chunk in client.stream_chat_completions(payload):
+                    yield chunk
+                br.record_success()
+                await client.close()
+                return
             except Exception as e:  # noqa: BLE001
                 last_err = e
                 br.record_failure()

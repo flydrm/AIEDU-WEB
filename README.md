@@ -42,3 +42,19 @@ npm --prefix tools run pdf
 
 GitHub Actions（手动触发）：`.github/workflows/export-pdf.yml`
 
+## 测试运行
+
+### 单元/集成（pytest）
+```bash
+pytest
+```
+
+当前测试用例以占位跳过形式落地，待 S1/S2 实现后逐步去掉 skip 并完善。
+
+### E2E（Playwright）
+```bash
+# 建议在 /e2e 目录安装依赖，并安装浏览器
+cd e2e && npm init -y && npm i -D @playwright/test && npx playwright install
+npx playwright test
+```
+

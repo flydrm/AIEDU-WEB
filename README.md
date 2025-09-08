@@ -53,17 +53,35 @@ pytest
 
 ### E2E（Playwright）
 ```bash
-# 建议在 /e2e 目录安装依赖，并安装浏览器
-cd e2e && npm init -y && npm i -D @playwright/test && npx playwright install
-npx playwright test
+# 后端：另一个终端启动
+uvicorn app.presentation.api.main:app --host 0.0.0.0 --port 8000
+
+# 前端：代理到 8000
+npm --prefix web install
+npm --prefix web run dev
+
+# 运行 E2E（从仓库根目录）
+E2E_BASE_URL=http://localhost:5173 npx playwright test
 ```
+
+CI 中可通过为 PR 打上 `run-e2e` 标签触发浏览器端到端用例。
 
 ## 运行与容器
 
 ### 本地启动
 ```bash
-uv run uvicorn app.presentation.api.main:app --host 0.0.0.0 --port 8080 --reload
+uv run uvicorn app.presentation.api.main:app --host 0.0.0.0 --port 8000 --reload
 ```
+## 前端（Vite + React + TS）
+
+```bash
+npm --prefix web install
+npm --prefix web run dev    # http://localhost:5173
+npm --prefix web run build
+npm --prefix web run preview
+```
+
+路由：`/`、`/chat`（SSE）、`/lesson`、`/safety`、`/parent`
 
 环境变量（可选）：
 - `AI_PROVIDERS`：JSON 数组，含 `name/base_url/api_key/timeout`

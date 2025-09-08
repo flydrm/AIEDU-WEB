@@ -35,5 +35,10 @@ npm --prefix tools install
 
 # 将 Markdown 导出为 PDF
 node tools/md2pdf.js ./docs/requirements-analysis-mvp.md ./docs/requirements-analysis-mvp.pdf
+
+# 或使用 npm script（推荐）
+npm --prefix tools run pdf
 ```
+
+GitHub Actions（手动触发）：`.github/workflows/export-pdf.yml`
 

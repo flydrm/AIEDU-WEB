@@ -1,0 +1,24 @@
+name: Export PMO PDF (manual)
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install tools deps
+        run: npm --prefix tools ci
+      - name: Generate PDF
+        run: npm --prefix tools run pdf
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: requirements-analysis-mvp-pdf
+          path: docs/requirements-analysis-mvp.pdf

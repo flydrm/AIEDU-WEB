@@ -39,6 +39,20 @@ LLM_FAILOVER = Counter(
     registry=REGISTRY,
 )
 
+# Embeddings / Rerank metrics
+EMBED_REQUESTS = Counter(
+    "embeddings_requests_total",
+    "Embeddings request count",
+    ["provider", "result"],
+    registry=REGISTRY,
+)
+RERANK_REQUESTS = Counter(
+    "rerank_requests_total",
+    "Rerank request count",
+    ["provider", "result"],
+    registry=REGISTRY,
+)
+
 
 @router.get("/metrics")
 async def metrics(request: Request):
@@ -68,4 +82,20 @@ def record_llm_error(provider: str, result: str) -> None:
 
 def record_llm_failover(from_provider: str, to_provider: str) -> None:
     LLM_FAILOVER.labels(**{"from": from_provider, "to": to_provider}).inc()
+
+
+def record_embed_success(provider: str) -> None:
+    EMBED_REQUESTS.labels(provider=provider, result="success").inc()
+
+
+def record_embed_error(provider: str, result: str) -> None:
+    EMBED_REQUESTS.labels(provider=provider, result=result).inc()
+
+
+def record_rerank_success(provider: str) -> None:
+    RERANK_REQUESTS.labels(provider=provider, result="success").inc()
+
+
+def record_rerank_error(provider: str, result: str) -> None:
+    RERANK_REQUESTS.labels(provider=provider, result=result).inc()
 

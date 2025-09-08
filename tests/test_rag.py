@@ -1,4 +1,4 @@
-from app.infrastructure.rag.retriever import SimpleRetriever, tokenize
+from app.infrastructure.rag.retriever import SimpleRetriever, tokenize, HybridRetriever
 
 
 def test_tokenize_handles_cjk_and_ascii():
@@ -20,4 +20,12 @@ def test_retriever_from_dataset_basic():
     r = SimpleRetriever.from_kids_dataset(ds)
     res = r.retrieve("红色小车", top_k=2)
     assert res and any("红" in (it.get("text") or "") for it in res)
+
+
+def test_hybrid_retriever_falls_back_without_embed():
+    ds = {"knowledge_cards": [{"id": "1", "title": "红色", "lines": ["红色像苹果"]}], "story_prompts": []}
+    base = SimpleRetriever.from_kids_dataset(ds)
+    hy = HybridRetriever(base._docs, None)
+    out = hy.retrieve("红色")
+    assert out and out[0].get("id") == "1"
 

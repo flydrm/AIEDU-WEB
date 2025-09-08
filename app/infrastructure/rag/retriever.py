@@ -3,6 +3,8 @@ from __future__ import annotations
 from collections import Counter
 from math import log, sqrt
 from typing import Any, Iterable
+import asyncio
+from app.infrastructure.ai.clients import EmbeddingsClient
 
 
 def _is_cjk(ch: str) -> bool:
@@ -127,4 +129,63 @@ class SimpleRetriever:
                 "text": text,
             })
         return SimpleRetriever(docs)
+
+
+class HybridRetriever(SimpleRetriever):
+    """Hybrid retriever: combine TF-IDF with optional embeddings + rerank hooks.
+
+    If embeddings provider is configured, it augments scores by cosine over embeddings.
+    """
+
+    def __init__(self, docs: list[dict[str, Any]], embed_client: EmbeddingsClient | None = None) -> None:
+        super().__init__(docs)
+        self._embed_client = embed_client
+        self._doc_embeds: list[list[float] | None] = [None] * len(docs)
+
+    async def _ensure_doc_embeds(self) -> None:
+        if not self._embed_client:
+            return
+        # naive: compute once per process (could cache to disk in production)
+        for idx, d in enumerate(self._docs):
+            if self._doc_embeds[idx] is not None:
+                continue
+            text = d.get("text") or ""
+            if not text:
+                self._doc_embeds[idx] = []
+                continue
+            try:
+                data = await self._embed_client.embeddings({"model": "BAAI/bge-m3", "input": text})
+                vec = data.get("data", [{}])[0].get("embedding") or []
+                self._doc_embeds[idx] = list(map(float, vec))
+            except Exception:
+                self._doc_embeds[idx] = []
+
+    async def retrieve_async(self, query: str, top_k: int = 3) -> list[dict[str, Any]]:
+        base = super().retrieve(query, top_k=top_k * 4)
+        if not self._embed_client or not base:
+            return base[:top_k]
+        await self._ensure_doc_embeds()
+        # query embed
+        try:
+            q = await self._embed_client.embeddings({"model": "BAAI/bge-m3", "input": query})
+            qv = list(map(float, (q.get("data", [{}])[0].get("embedding") or [])))
+        except Exception:
+            return base[:top_k]
+        def cos(a: list[float], b: list[float]) -> float:
+            if not a or not b:
+                return 0.0
+            n = min(len(a), len(b))
+            sa = sum(x*x for x in a[:n]) ** 0.5 or 1.0
+            sb = sum(x*x for x in b[:n]) ** 0.5 or 1.0
+            s = 0.0
+            for i in range(n):
+                s += a[i] * b[i]
+            return s / (sa * sb)
+        rescored = []
+        for item in base:
+            idx = self._docs.index(item)  # small list; ok for MVP
+            sim = cos(qv, self._doc_embeds[idx] or []) * 0.7  # weight embeddings
+            rescored.append((item, item.get("score", 0.0) * 0.3 + sim))
+        rescored.sort(key=lambda x: x[1], reverse=True)
+        return [it for it, _ in rescored[:top_k]]
 

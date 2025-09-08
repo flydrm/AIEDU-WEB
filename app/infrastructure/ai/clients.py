@@ -21,7 +21,15 @@ from typing import Any
 import httpx
 
 from .errors import RateLimitError, TimeoutError, ServerError
-from app.presentation.api.metrics import record_llm_success, record_llm_error, record_llm_failover
+from app.presentation.api.metrics import (
+    record_llm_success,
+    record_llm_error,
+    record_llm_failover,
+    record_embed_success,
+    record_embed_error,
+    record_rerank_success,
+    record_rerank_error,
+)
 
 
 class CircuitBreaker:
@@ -217,6 +225,78 @@ class FailoverLLMRouter:
         if last_err:
             raise last_err
         raise ServerError("no providers configured")
+
+
+class EmbeddingsClient(OpenAICompatibleClient):
+    async def embeddings(self, payload: dict[str, Any]) -> dict[str, Any]:
+        url = f"{self.base_url}/v1/embeddings"
+        headers = {"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"}
+        backoff = 0.1
+        for attempt in range(3):
+            try:
+                resp = await self._client.post(url, json=payload, headers=headers)
+                if resp.status_code == 200:
+                    record_embed_success(self.base_url)
+                    return resp.json()
+                if resp.status_code == 429:
+                    if attempt < 2:
+                        await asyncio.sleep(backoff)
+                        backoff *= 2
+                        continue
+                    record_embed_error(self.base_url, "429")
+                    raise RateLimitError("rate limited")
+                if 500 <= resp.status_code < 600:
+                    if attempt < 2:
+                        await asyncio.sleep(backoff)
+                        backoff *= 2
+                        continue
+                    record_embed_error(self.base_url, str(resp.status_code))
+                    raise ServerError(f"server error {resp.status_code}")
+                record_embed_error(self.base_url, str(resp.status_code))
+                raise ServerError(f"unexpected status {resp.status_code}")
+            except httpx.TimeoutException:
+                if attempt < 2:
+                    await asyncio.sleep(backoff)
+                    backoff *= 2
+                    continue
+                record_embed_error(self.base_url, "timeout")
+                raise TimeoutError("timeout")
+
+
+class RerankerClient(OpenAICompatibleClient):
+    async def rerank(self, payload: dict[str, Any]) -> dict[str, Any]:
+        url = f"{self.base_url}/v1/rerank"
+        headers = {"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"}
+        backoff = 0.1
+        for attempt in range(3):
+            try:
+                resp = await self._client.post(url, json=payload, headers=headers)
+                if resp.status_code == 200:
+                    record_rerank_success(self.base_url)
+                    return resp.json()
+                if resp.status_code == 429:
+                    if attempt < 2:
+                        await asyncio.sleep(backoff)
+                        backoff *= 2
+                        continue
+                    record_rerank_error(self.base_url, "429")
+                    raise RateLimitError("rate limited")
+                if 500 <= resp.status_code < 600:
+                    if attempt < 2:
+                        await asyncio.sleep(backoff)
+                        backoff *= 2
+                        continue
+                    record_rerank_error(self.base_url, str(resp.status_code))
+                    raise ServerError(f"server error {resp.status_code}")
+                record_rerank_error(self.base_url, str(resp.status_code))
+                raise ServerError(f"unexpected status {resp.status_code}")
+            except httpx.TimeoutException:
+                if attempt < 2:
+                    await asyncio.sleep(backoff)
+                    backoff *= 2
+                    continue
+                record_rerank_error(self.base_url, "timeout")
+                raise TimeoutError("timeout")
 
     def breaker_states(self) -> list[str]:
         """Return coarse breaker states per provider ("closed" or "open")."""

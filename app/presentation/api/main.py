@@ -13,7 +13,8 @@ from app.presentation.api import mount_v1
 from app.infrastructure.ai.settings import load_providers
 from app.infrastructure.ai.clients import FailoverLLMRouter
 from app.application.use_cases.chat_completion import ChatCompletionUseCase
-from app.infrastructure.rag.retriever import SimpleRetriever
+from app.infrastructure.rag.retriever import SimpleRetriever, HybridRetriever
+from app.infrastructure.ai.clients import EmbeddingsClient
 import json
 import time
 import uuid
@@ -96,8 +97,14 @@ def create_app() -> FastAPI:
     )
     retriever = None
     try:
-        # build lightweight retriever from kids dataset if available
-        retriever = SimpleRetriever.from_kids_dataset(app.state.kids_dataset)
+        # build Hybrid retriever; if embeddings is not configured, it falls back to TF-IDF only
+        providers = load_providers()
+        embed_client = None
+        if providers:
+            p0 = providers[0]
+            embed_client = EmbeddingsClient(p0["base_url"], p0["api_key"], p0.get("timeout", 30))
+        base = SimpleRetriever.from_kids_dataset(app.state.kids_dataset)
+        retriever = HybridRetriever(base._docs, embed_client) if embed_client else base
     except Exception:
         retriever = None
     app.state.chat_uc = (

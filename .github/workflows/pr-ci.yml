@@ -1,0 +1,49 @@
+name: PR CI
+
+on:
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e . pytest
+          npm --prefix web ci
+      - name: Build frontend
+        run: |
+          npm --prefix web run build
+      - name: Run tests
+        run: |
+          pytest -q
+
+  e2e:
+    if: contains(github.event.pull_request.labels.*.name, 'run-e2e')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install frontend deps
+        run: |
+          npm --prefix web ci
+          npm --prefix web run build
+      - name: Install Playwright Browsers
+        run: |
+          npx playwright install --with-deps
+      - name: Run E2E (frontend-only, hitting dev server)
+        env:
+          E2E_BASE_URL: http://localhost:5173
+        run: |
+          npx playwright test

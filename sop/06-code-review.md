@@ -205,12 +205,11 @@ API_KEY = os.environ.get("API_KEY", "")
 ```markdown
 // 具体的建议
 💡 **Suggestion**: 建议将这个方法拆分成更小的函数，提高可读性：
-```kotlin
-fun processData() {
-    val validated = validateData()
-    val transformed = transformData(validated)
-    saveData(transformed)
-}
+```python
+def process_data():
+    validated = validate_data()
+    transformed = transform_data(validated)
+    save_data(transformed)
 ```
 
 // 而不是
@@ -221,10 +220,11 @@ fun processData() {
 ```markdown
 // 明确的问题说明
 🐛 **Issue**: 这里可能存在空指针异常，建议添加空检查：
-```kotlin
-data?.let { 
-    processData(it) 
-} ?: handleEmptyData()
+```python
+if data is not None:
+    process_data(data)
+else:
+    handle_empty_data()
 ```
 
 // 而不是

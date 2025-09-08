@@ -51,7 +51,7 @@ async def test_use_case_generates_story():
 ```
 
 #### Repository测试
-```kotlin
+```text
 class StoryRepositoryImplTest {
     
     private lateinit var apiService: StoryApiService
@@ -108,7 +108,7 @@ class StoryRepositoryImplTest {
 ```
 
 ### 1.4 Mock最佳实践
-```kotlin
+```text
 // 使用MockK
 val mockService = mockk<ApiService> {
     coEvery { getData() } returns TestData.sample
@@ -139,7 +139,7 @@ test('首页加载并显示导航', async ({ page }) => {
 ```
 
 ### 2.2 测试ID最佳实践
-```kotlin
+```text
 // 为复杂UI元素添加testTag
 Button(
     modifier = Modifier.testTag("generate_story_button"),

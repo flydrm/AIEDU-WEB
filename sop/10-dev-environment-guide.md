@@ -71,7 +71,7 @@ app/infrastructure: DB/缓存/外部客户端
 
 ### 3.2 快速定位
 ```text
-搜索路由路径/端点函数名；依功能分层检索（presentation/application/domain/infrastructure）
+// 使用快捷定位与分层检索示例
 ```
 
 ### 3.3 路由结构（后端示例）
@@ -93,37 +93,35 @@ IDE（PyCharm/VS Code）断点/变量/调用栈；uvicorn --reload 便于快速�
 
 ### 4.2 日志调试
 ```text
-结构化 JSON 日志，携带 request_id/trace_id；敏感信息脱敏
-本地：控制台输出；生产：集中收集（ELK/Datadog/Cloud Logging）
+// 日志调试（本地/生产）
 ```
 
 ### 4.3 前端调试（如适用）
 ```text
-使用浏览器 DevTools：Elements/Network/Performance/Console
-定位布局、网络、渲染瓶颈；使用 React/Redux/Vue Devtools 辅助
+// 前端调试说明
 ```
 
 ### 4.4 性能调试
 ```text
-后端：采样火焰图、OTel trace、慢查询日志；前端：LCP/CLS/TBT/Core Web Vitals
+// 性能调试说明
 ```
 
 ## 5. 常见问题修复
 
 ### 5.1 构建错误修复
-```kotlin
+```text
 /**
  * 常见构建错误及解决方案
  */
 
 // 1. 依赖冲突
 // 错误：Duplicate class found
-// 解决：在app/build.gradle.kts中排除冲突
+// 解决：统一依赖与锁文件，避免冲突
 implementation("com.example:library:1.0") {
     exclude(group = "com.conflict", module = "module")
 }
 
-// 2. 版本不兼容
+// 2. 版本不兼容：统一依赖与锁文件，使用兼容矩阵（Python/Node/DB）
 // 错误：Module was compiled with an incompatible version
 // 解决：统一版本管理
 object Versions {
@@ -145,74 +143,17 @@ object Versions {
 ```
 
 ### 5.2 运行时错误修复
-```kotlin
-/**
- * 运行时错误调试步骤
- */
-
-// 1. 空指针异常（NullPointerException）
-// 查看堆栈跟踪，定位具体行
-// 使用安全调用操作符
-data?.let { 
-    // 安全使用data
-} ?: run {
-    // 处理null情况
-}
-
-// 2. 类型转换异常（ClassCastException）
-// 使用安全类型转换
-val result = data as? ExpectedType
-if (result != null) {
-    // 使用result
-}
-
-// 3. 并发修改异常（ConcurrentModificationException）
-// 使用线程安全的集合
-val safeList = Collections.synchronizedList(mutableListOf<Item>())
-// 或使用协程的通道
-val channel = Channel<Item>()
+```text
+步骤：复现（最小用例）→ 收集（日志/trace/请求）→ 定位（断点/二分）→ 修复验证
+分类：
+- 4xx：入参/权限/资源；统一错误体与指引
+- 5xx：异常捕获与降级；超时/重试/熔断；回滚策略
 ```
 
-### 5.3 UI问题修复
-```kotlin
-/**
- * 常见UI问题及解决方案
- */
-
-// 1. Compose预览不工作
-@Preview(showBackground = true)
-@Composable
-fun StoryScreenPreview() {
-    // 提供mock数据
-    AIEnlightenmentTheme {
-        StoryScreen(
-            uiState = StoryUiState(
-                story = Story(
-                    id = "1",
-                    title = "预览故事",
-                    content = "这是预览内容"
-                )
-            )
-        )
-    }
-}
-
-// 2. 主题不生效
-// 确保在最外层包裹主题
-setContent {
-    AIEnlightenmentTheme {  // 必须包裹主题
-        Surface {
-            MainNavigation()
-        }
-    }
-}
-
-// 3. 键盘遮挡输入框
-// 在AndroidManifest.xml中设置
-<activity
-    android:name=".MainActivity"
-    android:windowSoftInputMode="adjustResize">
-</activity>
+### 5.3 前端问题修复
+```text
+常见：布局错位、样式覆盖、跨域、缓存异常、包体积
+建议：分环境构建、CSP/跨域策略、按需加载、压缩与缓存
 ```
 
 ## 6. 打包发布

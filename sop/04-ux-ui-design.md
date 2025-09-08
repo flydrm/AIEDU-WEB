@@ -114,7 +114,7 @@ AI启蒙时光
 ```
 
 #### 3.3 组件设计 【重要：必须包含详细交互注释】
-```kotlin
+```text
 /**
  * 儿童友好的按钮组件
  * 
@@ -142,7 +142,7 @@ AI启蒙时光
  * - 调整尺寸需要保证最小可触摸区域48dp
  * - 添加动画效果注意性能影响
  */
-@Composable
+（示例为 Web 组件写法，移除 Compose 修饰符）
 fun KidButton(
     text: String,
     onClick: () -> Unit,
@@ -216,7 +216,7 @@ fun KidButton(
 ### 4. 交互设计
 
 #### 4.1 手势设计
-```kotlin
+```text
 // 支持的手势
 - 点击 (Tap): 主要交互方式
 - 长按 (LongPress): 显示提示
@@ -230,9 +230,9 @@ fun KidButton(
 ```
 
 #### 4.2 动画设计
-```kotlin
+```text
 // 进入动画
-@Composable
+（示例为 Web 组件写法）
 fun EnterAnimation(content: @Composable () -> Unit) {
     val visible = remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { visible.value = true }
@@ -281,7 +281,7 @@ fun ClickableBounce(
 ```
 
 #### 4.3 反馈机制
-```kotlin
+```text
 // 视觉反馈
 - 按钮按下效果
 - 加载进度展示
@@ -299,7 +299,7 @@ fun ClickableBounce(
 ### 5. 响应式设计
 
 #### 5.1 设备适配
-```kotlin
+```text
 // 屏幕尺寸分类
 enum class WindowSize {
     Compact,   // 手机
@@ -307,7 +307,7 @@ enum class WindowSize {
     Expanded   // 大平板
 }
 
-@Composable
+（示例为 Web 组件写法）
 fun rememberWindowSize(): WindowSize {
     val configuration = LocalConfiguration.current
     return when {
@@ -329,7 +329,7 @@ fun ResponsiveLayout() {
 ```
 
 #### 5.2 横竖屏适配
-```kotlin
+```text
 @Composable
 fun AdaptiveLayout() {
     val configuration = LocalConfiguration.current

@@ -124,7 +124,7 @@
 ### 4.2 注释规范要求
 
 #### 🔴 极其重要：中文注释规范
-```kotlin
+```text
 /**
  * 故事生成功能的核心用例
  * 
@@ -238,4 +238,4 @@ class GenerateStoryUseCase @Inject constructor(
 ---
 
 *基于AI启蒙时光项目实践总结*  
-*适用于Android应用开发*
+*适用于 Web 应用开发*

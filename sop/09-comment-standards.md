@@ -284,7 +284,9 @@ fi
 
 ### 权重计算示例
 
-```kotlin
+```text
+```text
+```text
 // 示例1：Domain层UseCase（权重1.5）
 class GenerateStoryUseCase {  // 缺少注释扣1.5分
     fun execute() { }

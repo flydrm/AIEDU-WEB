@@ -32,6 +32,19 @@ frontend (Next.js/Vite)
 | 智能对话 | /api/v1/dialogue | SendDialogueMessageUseCase | DialogueRepository | /chat |
 | 个人资料 | /api/v1/users/me | - | ProfileRepository | /profile |
 
+### 1.3 API 合同与依赖注入（示例）
+```python
+# OpenAPI（FastAPI 自动生成），合同变更需更新 pydantic 模型
+from fastapi import Depends
+
+def get_repo() -> StoryRepository:
+    return StoryRepositoryImpl()
+
+@router.post("/stories", response_model=StoryDTO)
+async def create_story(req: CreateStoryRequest, repo: StoryRepository = Depends(get_repo)):
+    return await GenerateStoryUseCase(repo)(req.topic)
+```
+
 ## 2. 快速定位技巧
 
 ### 2.1 导航与检索
@@ -162,26 +175,3 @@ presentation(api) → application(use cases) → domain(models/interfaces) → i
 
 ### 6.2 数据流向图
 ```
-用户输入 → 前端事件 → API 调用 → 用例执行 → 仓库/DB/外部 → 结果返回/渲染
-```
-
-## 最佳实践
-
-### DO ✅
-1. **保持功能独立**：每个功能模块应该高内聚低耦合
-2. **统一命名规范**：功能相关的类使用一致的前缀
-3. **添加导航注释**：在关键位置添加功能说明
-4. **使用依赖注入**：FastAPI Depends/手写容器，或轻量 DI 库
-5. **编写功能文档**：新功能要有使用说明
-
-### DON'T ❌
-1. **跨层直接调用**：不要让UI直接调用Repository
-2. **硬编码导航**：使用Navigation组件管理
-3. **功能耦合**：避免功能之间直接依赖
-4. **忽视错误处理**：每个功能都要有错误处理
-5. **破坏架构原则**：遵循Clean Architecture
-
----
-
-*功能入口快速定位指南 v1.0*  
-*让功能查找不再是难题*

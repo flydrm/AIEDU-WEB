@@ -144,6 +144,7 @@ syft packages registry.example.com/app:${GIT_SHA} -o spdx-json > sbom.json
 ### 4.3 产物与配置
 - 配置与密钥：12-Factor（环境变量/密钥管理），严禁硬编码
 - 构建产物：容器镜像 + Helm/Manifests + SBOM
+  - Helm values：按环境分层 values.dev/staging/prod.yaml；配置差异走 GitOps
 
 ### 4.4 发布材料准备
 ```markdown

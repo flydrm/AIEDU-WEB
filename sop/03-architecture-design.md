@@ -201,198 +201,62 @@ observability:
 
 #### 5.1 包结构
 ```
-com.company.app/
-├── data/
-│   ├── local/
-│   │   ├── dao/
-│   │   ├── database/
-│   │   └── entity/
-│   ├── remote/
-│   │   ├── api/
-│   │   ├── dto/
-│   │   └── interceptor/
-│   └── repository/
-├── domain/
-│   ├── model/
-│   ├── repository/
-│   └── usecase/
+app/
 ├── presentation/
-│   ├── ui/
-│   │   ├── screen/
-│   │   ├── component/
-│   │   └── theme/
-│   ├── viewmodel/
-│   └── navigation/
-└── di/
-    └── module/
+│   ├── api/
+│   │   └── v1/
+│   └── deps.py
+├── application/
+│   └── use_cases/
+├── domain/
+│   ├── models.py
+│   └── repositories.py
+└── infrastructure/
+    ├── repositories/
+    ├── db/
+    └── clients/
 ```
 
 #### 5.1.1 🔴 关键：架构层级注释规范
 
-```kotlin
-/**
- * 数据层 - AI故事仓库实现
- * 
- * 架构职责：
- * 1. 实现Domain层定义的StoryRepository接口
- * 2. 协调远程API和本地缓存
- * 3. 处理数据转换和错误处理
- * 
- * 核心流程：
- * 1. 优先调用远程AI服务生成故事
- * 2. 失败时自动降级到本地缓存
- * 3. 成功后更新本地缓存供离线使用
- * 
- * 依赖关系：
- * - StoryApiService: 远程API调用
- * - StoryDao: 本地数据库访问
- * - NetworkRetryPolicy: 网络重试策略
- * 
- * 二次开发指南：
- * - 添加新的AI模型：修改AIModelConfig配置
- * - 调整缓存策略：修改CACHE_DURATION常量
- * - 自定义重试逻辑：继承NetworkRetryPolicy
- */
-@Singleton
-class StoryRepositoryImpl @Inject constructor(
-    private val apiService: StoryApiService,
-    private val storyDao: StoryDao,
-    private val retryPolicy: NetworkRetryPolicy
-) : StoryRepository {
-    
-    companion object {
-        // 缓存有效期：7天
-        private const val CACHE_DURATION = 7 * 24 * 60 * 60 * 1000L
-    }
-    
-    override suspend fun generateStory(topic: String): Result<Story> {
-        return try {
-            // Step 1: 尝试从远程生成新故事
-            val story = retryPolicy.executeWithRetry {
-                apiService.generateStory(
-                    StoryRequest(
-                        topic = topic,
-                        // 根据用户年龄调整故事复杂度
-                        complexity = getComplexityByAge(),
-                        // 故事长度：300-500字
-                        length = "medium"
-                    )
-                )
-            }.toDomainModel()
-            
-            // Step 2: 保存到本地缓存
-            storyDao.insertStory(story.toEntity())
-            
-            // Step 3: 清理过期缓存
-            cleanExpiredCache()
-            
-            Result.success(story)
-        } catch (e: Exception) {
-            // Step 4: 失败时尝试返回本地缓存
-            handleGenerationError(e, topic)
-        }
-    }
-    
-    /**
-     * 处理故事生成失败
-     * 
-     * 降级策略：
-     * 1. 优先返回相同主题的缓存故事
-     * 2. 如果没有，返回任意缓存故事
-     * 3. 都没有则返回失败
-     */
-    private suspend fun handleGenerationError(
-        error: Exception,
-        topic: String
-    ): Result<Story> {
-        // 记录错误日志，方便问题排查
-        Timber.e(error, "故事生成失败，尝试使用缓存")
-        
-        // 尝试获取相同主题的故事
-        val cachedStory = storyDao.getStoryByTopic(topic)
-            ?: storyDao.getRandomStory()
-            
-        return if (cachedStory != null) {
-            Result.success(cachedStory.toDomainModel())
-        } else {
-            Result.failure(error)
-        }
-    }
-}
+```python
+class StoryRepositoryImpl(StoryRepository):
+    """数据层 - 故事仓库实现（示例）。"""
+
+    async def generate_story(self, topic: str) -> Story:
+        # 调用外部服务 + 本地缓存 + 降级策略（省略实现）
+        ...
 ```
 
 #### 5.2 命名规范
-```kotlin
-// 类命名
-class StoryViewModel : ViewModel()          // ViewModel
-class GenerateStoryUseCase                  // UseCase
-interface StoryRepository                   // Repository接口
-class StoryRepositoryImpl : StoryRepository // Repository实现
+```python
+# 命名
+class GenerateStoryUseCase: ...
+class StoryRepository(Protocol): ...
+class StoryRepositoryImpl(StoryRepository): ...
 
-// 函数命名
-fun generateStory(): Flow<Story>            // 动词开头
-suspend fun saveStory(story: Story)         // 明确意图
-
-// 变量命名
-private val _uiState = MutableStateFlow()   // 私有状态
-val uiState: StateFlow = _uiState           // 公开状态
+# 函数
+async def generate_story(...) -> Story: ...
+def save_story(story: Story) -> None: ...
 ```
 
 ### 6. 性能考虑
 
 #### 6.1 启动优化
-```kotlin
-// 延迟初始化
-class MyApp : Application() {
-    val analyticsManager by lazy { AnalyticsManager() }
-}
-
-// 按需加载模块
-@Module
-@InstallIn(SingletonComponent::class)
-object AppModule {
-    @Provides
-    fun provideHeavyService(): HeavyService {
-        return HeavyService() // 只在注入时创建
-    }
-}
+```text
+延迟非关键初始化；单例化客户端；仅加载必要配置与依赖
 ```
 
 #### 6.2 内存优化
-```kotlin
-// 使用弱引用避免内存泄漏
-class MyViewModel : ViewModel() {
-    private var callback: WeakReference<Callback>? = null
-    
-    override fun onCleared() {
-        super.onCleared()
-        callback?.clear()
-    }
-}
+```text
+连接池与文件句柄关闭；限制缓存大小；避免持久引用大对象
 ```
 
 ### 7. 安全设计
 
 #### 7.1 数据安全
-```kotlin
-// 加密存储敏感数据
-@Module
-object SecurityModule {
-    @Provides
-    fun provideEncryptedPrefs(
-        @ApplicationContext context: Context
-    ): SharedPreferences {
-        return EncryptedSharedPreferences.create(
-            context,
-            "secure_prefs",
-            MasterKey.Builder(context)
-                .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-                .build(),
-            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-        )
-    }
-}
+```text
+敏感信息加密存储；密钥由环境/密管注入；最小权限、审计与脱敏
 ```
 
 ## 架构评审
@@ -447,5 +311,5 @@ object SecurityModule {
 
 ---
 
-*基于AI启蒙时光Clean Architecture实践*  
-*适用于中大型Android项目*
+*基于 Clean Architecture 的 Web 实践*  
+*适用于中小型至中大型 Web 项目*

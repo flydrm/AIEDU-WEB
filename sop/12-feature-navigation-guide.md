@@ -110,353 +110,59 @@ export default function Stories() {
 }
 ```
 
-### 3.3 导航系统
-```kotlin
-/**
- * 导航配置中心
- * 文件：presentation/navigation/EnlightenmentNavHost.kt
- */
-@Composable
-fun EnlightenmentNavHost(
-    navController: NavHostController,
-    modifier: Modifier = Modifier
-) {
-    NavHost(
-        navController = navController,
-        startDestination = Screen.Home.route,
-        modifier = modifier
-    ) {
-        // 首页
-        composable(Screen.Home.route) {
-            HomeScreen(
-                onNavigateToStory = {
-                    navController.navigate(Screen.Story.route)
-                },
-                onNavigateToDialogue = {
-                    navController.navigate(Screen.Dialogue.route)
-                },
-                onNavigateToCamera = {
-                    navController.navigate(Screen.Camera.route)
-                },
-                onNavigateToProfile = {
-                    navController.navigate(Screen.Profile.route)
-                },
-                onNavigateToParent = {
-                    navController.navigate(Screen.ParentLogin.route)
-                }
-            )
-        }
-        
-        // AI故事
-        composable(Screen.Story.route) {
-            StoryScreen(
-                onBack = { navController.popBackStack() }
-            )
-        }
-        
-        // 智能对话
-        composable(Screen.Dialogue.route) {
-            DialogueScreen(
-                onBack = { navController.popBackStack() }
-            )
-        }
-        
-        // 拍照识别
-        composable(Screen.Camera.route) {
-            CameraScreen(
-                onBack = { navController.popBackStack() },
-                onImageCaptured = { imageUri ->
-                    // 处理拍照结果
-                }
-            )
-        }
-        
-        // 个人中心
-        composable(Screen.Profile.route) {
-            ProfileScreen(
-                onBack = { navController.popBackStack() }
-            )
-        }
-        
-        // 家长验证
-        composable(Screen.ParentLogin.route) {
-            ParentLoginScreen(
-                onSuccess = {
-                    navController.navigate(Screen.ParentDashboard.route)
-                },
-                onBack = { navController.popBackStack() }
-            )
-        }
-        
-        // 家长中心
-        composable(Screen.ParentDashboard.route) {
-            ParentDashboardScreen(
-                onBack = { navController.popBackStack() },
-                onNavigateToSettings = { settingType ->
-                    navController.navigate("settings/$settingType")
-                }
-            )
-        }
-    }
-}
+### 3.3 路由系统（后端组合）
+```python
+# app/presentation/api/main.py
+from fastapi import FastAPI
+from app.presentation.api.v1 import __init__ as v1
 
-/**
- * 路由定义
- */
-sealed class Screen(val route: String) {
-    object Home : Screen("home")
-    object Story : Screen("story")
-    object Dialogue : Screen("dialogue")
-    object Camera : Screen("camera")
-    object Profile : Screen("profile")
-    object ParentLogin : Screen("parent_login")
-    object ParentDashboard : Screen("parent_dashboard")
-    
-    // 带参数的路由
-    object StoryDetail : Screen("story/{storyId}") {
-        fun createRoute(storyId: String) = "story/$storyId"
-    }
-}
+
+app = FastAPI()
+app.include_router(v1.api)
 ```
 
 ## 4. 快速添加新功能
 
-### 4.1 添加新功能的标准流程
-```kotlin
-/**
- * 示例：添加"每日任务"功能
- */
-
-// Step 1: 创建领域模型
-// domain/model/DailyTask.kt
-data class DailyTask(
-    val id: String,
-    val title: String,
-    val description: String,
-    val points: Int,
-    val isCompleted: Boolean
-)
-
-// Step 2: 定义Repository接口
-// domain/repository/DailyTaskRepository.kt
-interface DailyTaskRepository {
-    suspend fun getDailyTasks(): Result<List<DailyTask>>
-    suspend fun completeTask(taskId: String): Result<Unit>
-}
-
-// Step 3: 创建UseCase
-// domain/usecase/GetDailyTasksUseCase.kt
-class GetDailyTasksUseCase @Inject constructor(
-    private val repository: DailyTaskRepository
-) {
-    suspend operator fun invoke(): Result<List<DailyTask>> {
-        return repository.getDailyTasks()
-    }
-}
-
-// Step 4: 实现Repository
-// data/repository/DailyTaskRepositoryImpl.kt
-@Singleton
-class DailyTaskRepositoryImpl @Inject constructor(
-    private val apiService: DailyTaskApiService,
-    private val taskDao: DailyTaskDao
-) : DailyTaskRepository {
-    
-    override suspend fun getDailyTasks(): Result<List<DailyTask>> {
-        // 实现数据获取逻辑
-    }
-}
-
-// Step 5: 创建ViewModel
-// presentation/dailytask/DailyTaskViewModel.kt
-@HiltViewModel
-class DailyTaskViewModel @Inject constructor(
-    private val getDailyTasksUseCase: GetDailyTasksUseCase,
-    private val completeTaskUseCase: CompleteTaskUseCase
-) : ViewModel() {
-    // 状态管理和业务逻辑
-}
-
-// Step 6: 创建UI界面
-// presentation/dailytask/DailyTaskScreen.kt
-@Composable
-fun DailyTaskScreen(
-    viewModel: DailyTaskViewModel = hiltViewModel(),
-    onBack: () -> Unit
-) {
-    // UI实现
-}
-
-// Step 7: 添加导航路由
-// 在Navigation中添加新路由
-composable(Screen.DailyTask.route) {
-    DailyTaskScreen(
-        onBack = { navController.popBackStack() }
-    )
-}
-
-// Step 8: 在首页添加入口
-// 在HomeScreen中添加新功能入口
-FeatureCard(
-    title = "每日任务",
-    icon = Icons.Task,
-    onClick = { navController.navigate(Screen.DailyTask.route) }
-)
+### 4.1 添加新功能（标准流程）
+```text
+1) 定义领域模型与仓库接口（domain）
+2) 实现用例（application）与仓库实现（infrastructure）
+3) 暴露 API（presentation/api）并更新 OpenAPI
+4) 前端页面/组件与路由
+5) 单元/集成/E2E 测试，更新文档与检查清单
 ```
 
 ### 4.2 功能模块清单模板
-```kotlin
-/**
- * 新功能检查清单
- * 
- * Domain层：
- * □ 创建数据模型 (model/)
- * □ 定义Repository接口 (repository/)
- * □ 实现UseCase (usecase/)
- * 
- * Data层：
- * □ 定义API接口 (remote/api/)
- * □ 创建DTO模型 (remote/model/)
- * □ 实现Repository (repository/)
- * □ 创建DAO接口 (local/dao/)
- * □ 定义Entity (local/entity/)
- * 
- * Presentation层：
- * □ 创建ViewModel (viewmodel/)
- * □ 实现UI界面 (screen/)
- * □ 定义UI状态 (state/)
- * □ 添加导航路由 (navigation/)
- * 
- * DI配置：
- * □ 提供Repository绑定 (RepositoryModule)
- * □ 配置ViewModel (无需手动，Hilt自动处理)
- * 
- * 测试：
- * □ 编写UseCase测试
- * □ 编写ViewModel测试
- * □ 编写UI测试
- */
+```markdown
+Domain：模型/仓库接口
+Application：用例
+Infrastructure：仓库实现/DB/外部客户端
+Presentation：路由/依赖/DTO
+测试：unit/integration/e2e
 ```
 
 ## 5. 调试功能入口
 
-### 5.1 功能追踪工具
-```kotlin
-/**
- * 功能调用追踪器
- * 用于调试功能调用链路
- */
-object FeatureTracker {
-    
-    private val callStack = mutableListOf<String>()
-    
-    fun enter(feature: String, extra: String = "") {
-        val entry = "${System.currentTimeMillis()} -> $feature $extra"
-        callStack.add(entry)
-        Timber.d("📍 进入功能: $feature $extra")
-    }
-    
-    fun exit(feature: String) {
-        Timber.d("📤 退出功能: $feature")
-    }
-    
-    fun printCallStack() {
-        Timber.d("=== 功能调用栈 ===")
-        callStack.forEach { entry ->
-            Timber.d(entry)
-        }
-        Timber.d("================")
-    }
-    
-    @Composable
-    fun TrackedScreen(
-        screenName: String,
-        content: @Composable () -> Unit
-    ) {
-        DisposableEffect(screenName) {
-            enter(screenName)
-            onDispose {
-                exit(screenName)
-            }
-        }
-        content()
-    }
-}
-
-// 使用示例
-@Composable
-fun StoryScreen() {
-    FeatureTracker.TrackedScreen("StoryScreen") {
-        // 界面内容
-    }
-}
+### 5.1 功能追踪
+```text
+建议：统一日志字段（feature/module/action）、trace_id 贯穿全链路
 ```
 
 ### 5.2 功能开关配置
-```kotlin
-/**
- * 功能开关管理
- * 用于控制功能的启用/禁用
- */
-object FeatureFlags {
-    
-    // 功能开关定义
-    var isVoiceEnabled by mutableStateOf(true)
-    var isCameraEnabled by mutableStateOf(true)
-    var isDebugMenuEnabled by mutableStateOf(BuildConfig.DEBUG)
-    
-    // 远程配置（可选）
-    fun loadRemoteConfig() {
-        // 从服务器加载功能开关配置
-    }
-    
-    @Composable
-    fun ConditionalFeature(
-        flag: Boolean,
-        content: @Composable () -> Unit
-    ) {
-        if (flag) {
-            content()
-        }
-    }
-}
-
-// 使用示例
-@Composable
-fun HomeScreen() {
-    Column {
-        // 条件显示相机功能
-        FeatureFlags.ConditionalFeature(FeatureFlags.isCameraEnabled) {
-            FeatureCard(
-                title = "探索相机",
-                onClick = { /* 导航到相机 */ }
-            )
-        }
-    }
-}
+```text
+后端/前端使用特性开关平台或配置开关；支持按用户/租户/比例
 ```
 
 ## 6. 功能依赖关系图
 
 ### 6.1 模块依赖关系
 ```
-presentation
-    ↓ 依赖
-domain (纯Kotlin，无Android依赖)
-    ↑ 被依赖
-data
-
-具体流程：
-UI操作 → ViewModel → UseCase → Repository接口
-                                    ↑
-                            RepositoryImpl → API/Database
+presentation(api) → application(use cases) → domain(models/interfaces) → infrastructure
 ```
 
 ### 6.2 数据流向图
 ```
-用户输入 → UI Event → ViewModel Action → UseCase Execute
-                                              ↓
-UI Update ← ViewModel State ← UseCase Result ←
+用户输入 → 前端事件 → API 调用 → 用例执行 → 仓库/DB/外部 → 结果返回/渲染
 ```
 
 ## 最佳实践
@@ -465,7 +171,7 @@ UI Update ← ViewModel State ← UseCase Result ←
 1. **保持功能独立**：每个功能模块应该高内聚低耦合
 2. **统一命名规范**：功能相关的类使用一致的前缀
 3. **添加导航注释**：在关键位置添加功能说明
-4. **使用依赖注入**：通过Hilt管理依赖关系
+4. **使用依赖注入**：FastAPI Depends/手写容器，或轻量 DI 库
 5. **编写功能文档**：新功能要有使用说明
 
 ### DON'T ❌

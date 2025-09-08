@@ -56,325 +56,82 @@ def generate_story(topic: str, user_age: int = 5) -> Story:
 
 ### 3. 复杂逻辑注释
 
-```kotlin
-/**
- * 计算用户学习进度
- * 
- * 算法说明：
- * 使用加权平均算法计算综合进度，不同维度有不同权重：
- * - 故事完成率（40%）：已完成故事数 / 总故事数
- * - 问题正确率（30%）：正确回答数 / 总问题数
- * - 学习时长（20%）：实际学习时长 / 目标时长
- * - 连续天数（10%）：连续学习天数 / 7天
- * 
- * 计算公式：
- * progress = 0.4 * storyRate + 0.3 * questionRate + 0.2 * timeRate + 0.1 * streakRate
- * 
- * 特殊处理：
- * 1. 如果连续学习超过7天，额外加5%进度奖励
- * 2. 如果当天学习超过30分钟，额外加3%进度奖励
- * 3. 最终进度值限制在0-100之间
- */
-fun calculateLearningProgress(stats: LearningStats): Float {
-    // 计算各维度进度
-    val storyRate = stats.completedStories.toFloat() / max(stats.totalStories, 1)
-    val questionRate = stats.correctAnswers.toFloat() / max(stats.totalQuestions, 1)
-    val timeRate = min(stats.todayMinutes.toFloat() / TARGET_DAILY_MINUTES, 1f)
-    val streakRate = min(stats.streakDays.toFloat() / 7f, 1f)
-    
-    // 加权计算
-    var progress = 0.4f * storyRate + 0.3f * questionRate + 0.2f * timeRate + 0.1f * streakRate
-    
-    // 连续学习奖励
-    if (stats.streakDays >= 7) {
-        progress += 0.05f
-    }
-    
-    // 超时学习奖励
-    if (stats.todayMinutes >= 30) {
-        progress += 0.03f
-    }
-    
-    // 限制范围
-    return (progress * 100).coerceIn(0f, 100f)
-}
+```python
+def calculate_learning_progress(stats: LearningStats) -> float:
+    """计算学习进度（加权）。
+
+    公式：0.4*故事完成 + 0.3*答题正确 + 0.2*时长 + 0.1*连续天数
+    特殊：连续≥7天 +5%；当日≥30分钟 +3%；返回 0-100
+    """
+    ...
 ```
 
-### 4. UI交互注释
+### 4. 交互/API 注释
 
-```kotlin
-/**
- * 故事生成界面
- * 
- * 界面功能：
- * 让用户输入故事主题，生成个性化的AI故事
- * 
- * 交互流程：
- * 1. 用户进入界面，看到可爱的熊猫引导动画
- * 2. 用户在输入框输入想要的故事主题（如"恐龙"）
- * 3. 点击"生成故事"按钮，按钮变为不可点击状态
- * 4. 显示加载动画（旋转的熊猫）和提示文字"小熊猫正在创作..."
- * 5. 生成成功后，自动跳转到故事阅读页面
- * 6. 生成失败时，显示友好的错误提示，按钮恢复可点击
- * 
- * UI状态说明：
- * - Idle: 初始状态，等待用户输入
- * - Loading: 正在生成故事，显示加载动画
- * - Success: 生成成功，准备跳转
- * - Error: 生成失败，显示错误信息
- * 
- * 设计要点：
- * 1. 输入框使用大字体（24sp），方便儿童识别
- * 2. 按钮采用鲜艳颜色和大尺寸（高度64dp）
- * 3. 加载动画要有趣，保持儿童注意力
- * 4. 错误提示要友好，不能让儿童感到挫败
- * 
- * 无障碍支持：
- * - 所有可交互元素都有contentDescription
- * - 支持TalkBack朗读
- * - 最小触摸目标48dp
- * 
- * @param viewModel 故事生成的ViewModel
- * @param onStoryGenerated 故事生成成功的回调
- * @param onBack 返回按钮的回调
- */
-@Composable
-fun StoryGenerateScreen(
-    viewModel: StoryViewModel = hiltViewModel(),
-    onStoryGenerated: (Story) -> Unit,
-    onBack: () -> Unit
-) {
-    val uiState by viewModel.uiState.collectAsState()
-    
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        // 顶部导航栏
-        TopBar(
-            title = "创作故事",
-            onBack = onBack
-        )
-        
-        Spacer(modifier = Modifier.height(32.dp))
-        
-        // 熊猫引导动画
-        PandaAnimation(
-            mood = when (uiState) {
-                is StoryUiState.Loading -> "thinking"  // 思考中的表情
-                is StoryUiState.Error -> "sad"         // 失败时难过
-                is StoryUiState.Success -> "happy"     // 成功时开心
-                else -> "neutral"                      // 默认表情
-            }
-        )
-        
-        // ... 其他UI组件
-    }
-}
+```python
+@router.post("/stories")
+async def create_story(req: CreateStoryRequest) -> StoryDTO:
+    """生成故事。
+
+    交互：输入主题 -> 用例 -> 内容过滤 -> 返回结果
+    状态：201 成功，400/500 失败
+    无障碍：错误信息清晰可读
+    """
+    ...
 ```
 
 ### 5. 业务规则注释
 
-```kotlin
-/**
- * 验证故事主题的合法性
- * 
- * 业务规则：
- * 1. 主题不能为空
- * 2. 主题长度限制2-10个字符
- * 3. 不能包含敏感词汇
- * 4. 必须是支持的主题类型
- * 
- * 敏感词过滤：
- * - 暴力相关词汇
- * - 不适合儿童的内容
- * - 政治敏感内容
- * 
- * 支持的主题（会定期更新）：
- * - 动物世界：恐龙、熊猫、兔子、大象、老虎等
- * - 童话故事：公主、王子、城堡、魔法、精灵等  
- * - 科学探索：太空、星星、机器人、发明家等
- * - 日常生活：上学、玩耍、朋友、家庭、节日等
- * 
- * @param topic 用户输入的主题
- * @throws IllegalArgumentException 当主题不符合规则时
- * 
- * 扩展说明：
- * 如需添加新的主题类型，请：
- * 1. 在SUPPORTED_TOPICS中添加新主题
- * 2. 在对应的AI提示词模板中添加新类型
- * 3. 更新用户界面的主题推荐列表
- */
-private fun validateTopic(topic: String) {
-    // 规则1: 非空检查
-    require(topic.isNotBlank()) { 
-        "主题不能为空，请输入你想听的故事主题" 
-    }
-    
-    // 规则2: 长度检查
-    require(topic.length in 2..10) { 
-        "主题长度需要在2-10个字之间" 
-    }
-    
-    // 规则3: 敏感词检查
-    require(!containsSensitiveWords(topic)) { 
-        "这个主题不太适合，换一个试试吧" 
-    }
-    
-    // 规则4: 主题类型检查（可选，宽松模式）
-    if (STRICT_MODE) {
-        require(isTopicSupported(topic)) { 
-            "暂时还不支持这个主题，试试其他的吧" 
-        }
-    }
-}
+```python
+def validate_topic(topic: str) -> None:
+    """验证主题合法性：非空、长度、敏感词、类型白名单。"""
+    ...
 ```
 
 ### 6. 配置和常量注释
 
-```kotlin
-/**
- * AI服务配置
- * 
- * 配置说明：
- * 管理所有AI模型的配置信息，包括API地址、密钥、超时时间等
- * 
- * 环境说明：
- * - 开发环境：使用测试API，有调用次数限制
- * - 生产环境：使用正式API，需要计费
- * 
- * 安全说明：
- * - API密钥通过环境变量注入，不要硬编码
- * - 所有密钥都需要加密存储
- * - 定期轮换密钥，提高安全性
- */
-object AIModelConfig {
-    /**
-     * 主AI模型 - GEMINI-2.5-PRO
-     * 
-     * 特点：
-     * - 响应速度快（1-3秒）
-     * - 创造力强，故事生动
-     * - 支持多语言
-     * - 价格适中
-     * 
-     * 限制：
-     * - 每分钟60次调用
-     * - 每次最多2000字输出
-     * - 需要付费订阅
-     */
-    const val PRIMARY_MODEL = "GEMINI-2.5-PRO"
-    const val PRIMARY_API_URL = BuildConfig.GEMINI_API_URL
-    const val PRIMARY_API_KEY = BuildConfig.GEMINI_API_KEY
-    
-    /**
-     * 备用AI模型 - GPT-5-PRO
-     * 
-     * 使用场景：
-     * - 主模型故障时自动切换
-     * - 需要更高质量输出时
-     * - 特定主题的优化处理
-     * 
-     * 注意：
-     * - 成本较高，谨慎使用
-     * - 响应时间3-5秒
-     */
-    const val FALLBACK_MODEL = "GPT-5-PRO"
-    const val FALLBACK_API_URL = BuildConfig.GPT_API_URL
-    const val FALLBACK_API_KEY = BuildConfig.GPT_API_KEY
-    
-    /**
-     * 超时配置
-     * 
-     * 经验值：
-     * - 正常网络：5秒足够
-     * - 弱网环境：需要15-30秒
-     * - 用户可接受等待：最多30秒
-     */
-    const val CONNECTION_TIMEOUT = 30_000L  // 连接超时：30秒
-    const val READ_TIMEOUT = 30_000L        // 读取超时：30秒
-    const val WRITE_TIMEOUT = 30_000L       // 写入超时：30秒
-    
-    /**
-     * 重试策略
-     * 
-     * 策略说明：
-     * - 网络错误：重试3次
-     * - 服务器错误（5xx）：重试2次  
-     * - 客户端错误（4xx）：不重试
-     * - 使用指数退避算法
-     */
-    const val MAX_RETRY_COUNT = 3
-    const val INITIAL_RETRY_DELAY = 1000L   // 首次重试延迟：1秒
-    const val MAX_RETRY_DELAY = 10000L      // 最大重试延迟：10秒
-}
+```python
+class AIModelConfig:
+    """AI 服务配置：密钥来自环境；区分 dev/test/staging/prod；超时与重试策略。"""
+    ...
 ```
 
 ## 注释模板
 
 ### 1. 新功能开发模板
-```kotlin
-/**
- * [功能名称]
- * 
- * 功能概述：
- * [一句话说明这个功能做什么]
- * 
- * 业务背景：
- * [为什么需要这个功能]
- * 
- * 实现方案：
- * [简述技术实现方案]
- * 
- * 注意事项：
- * [使用时需要注意什么]
- * 
- * @author [你的名字]
- * @since [版本号]
- */
+```python
+def feature_entry():
+    """[功能名称]
+
+    背景：
+    实现：
+    注意：
+    """
+    ...
 ```
 
 ### 2. Bug修复模板
-```kotlin
-/**
- * 修复：[问题描述]
- * 
- * 问题原因：
- * [导致bug的根本原因]
- * 
- * 解决方案：
- * [如何修复的]
- * 
- * 影响范围：
- * [这个修复会影响哪些功能]
- * 
- * @fixedBy [你的名字]
- * @date [修复日期]
- * @issue [Issue编号]
- */
+```python
+def fix_bug():
+    """修复：[问题描述]
+
+    原因：
+    方案：
+    影响：
+    """
+    ...
 ```
 
 ### 3. 性能优化模板
-```kotlin
-/**
- * 性能优化：[优化点]
- * 
- * 优化前：
- * - 性能指标：[具体数据]
- * - 存在问题：[性能瓶颈]
- * 
- * 优化后：
- * - 性能指标：[具体数据]
- * - 提升效果：[提升百分比]
- * 
- * 优化方案：
- * [具体的优化措施]
- * 
- * @optimizedBy [你的名字]
- * @date [优化日期]
- */
+```python
+def optimize_performance():
+    """性能优化：[优化点]
+
+    前：
+    后：
+    方案：
+    """
+    ...
 ```
 
 ## 注释检查工具

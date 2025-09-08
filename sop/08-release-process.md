@@ -53,8 +53,8 @@ graph LR
 - 新API需要后端配合
 
 ## 回滚方案
-- 保留上个版本APK
-- 数据库降级脚本准备
+- 保留上一个稳定容器镜像 Tag（如 app:prev-stable）
+- 预备数据库降级脚本/回滚策略（审慎评估数据丢失风险）
 ```
 
 ## 2. 功能冻结
@@ -73,10 +73,9 @@ git checkout develop
 git pull origin develop
 git checkout -b release/1.2.0
 
-# 更新版本号
-# app/build.gradle.kts
-versionCode = 120
-versionName = "1.2.0"
+# 更新版本号（示例）
+# pyproject.toml / package.json / chart/values.yaml（镜像tag）
+# 确保后端与前端版本对齐，并记录于CHANGELOG.md
 
 # 提交版本号更改
 git add .
@@ -88,30 +87,22 @@ git push origin release/1.2.0
 
 ### 3.1 测试清单
 ```markdown
-## 功能测试
-- [ ] 新功能测试完成
-- [ ] 回归测试通过
-- [ ] 边界条件测试
-- [ ] 异常场景测试
+## 功能测试（后端/前端）
+- [ ] 新功能测试完成（用例覆盖）
+- [ ] 回归测试通过（关键路径）
+- [ ] 边界/异常场景测试
+- [ ] 合同测试（OpenAPI Schema、schemathesis）
 
-## 兼容性测试
-- [ ] Android 7.0 (API 24)
-- [ ] Android 8.0 (API 26)
-- [ ] Android 10 (API 29)
-- [ ] Android 12 (API 31)
-- [ ] Android 14 (API 34)
+## 兼容性测试（Web）
+- 浏览器矩阵（Chrome/Edge/Firefox/Safari 近两个大版本）
+- 终端矩阵（Desktop/Mobile 常见分辨率）
+- 后端依赖（Python3.11、DB版本、Redis、消息队列）
 
-## 设备测试
-- [ ] 小屏手机 (5.0")
-- [ ] 普通手机 (6.0")
-- [ ] 大屏手机 (6.7")
-- [ ] 平板 (10")
-
-## 性能测试
-- [ ] 启动时间 < 3秒
-- [ ] 内存使用 < 150MB
-- [ ] 无ANR问题
-- [ ] 电池消耗正常
+## 性能与可靠性
+- [ ] API P95/P99 延迟与吞吐
+- [ ] 错误率/超时率
+- [ ] 资源使用（CPU/内存/连接池）
+- [ ] 关键场景压测（k6/locust）
 ```
 
 ### 3.2 自动化测试
@@ -145,70 +136,25 @@ cosign sign --key cosign.key registry.example.com/app:${GIT_SHA}
 syft packages registry.example.com/app:${GIT_SHA} -o spdx-json > sbom.json
 ```
 
-### 4.2 签名配置
-```kotlin
-// app/build.gradle.kts
-android {
-    signingConfigs {
-        create("release") {
-            storeFile = file(System.getenv("KEYSTORE_FILE") ?: "keystore.jks")
-            storePassword = System.getenv("KEYSTORE_PASSWORD") ?: ""
-            keyAlias = System.getenv("KEY_ALIAS") ?: ""
-            keyPassword = System.getenv("KEY_PASSWORD") ?: ""
-        }
-    }
-    
-    buildTypes {
-        release {
-            signingConfig = signingConfigs.getByName("release")
-            isMinifyEnabled = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-        }
-    }
-}
-```
+### 4.2 镜像签名与SBOM策略
+- Cosign 对镜像签名；公钥验证纳入部署流水线
+- Syft/Grype 生成并扫描 SBOM（SPDX/CycloneDX）
+- 产物与签名、SBOM 一并归档与可追溯
 
-### 4.3 混淆配置
-```proguard
-# proguard-rules.pro
-
-# 保留实体类
--keep class com.enlightenment.ai.domain.model.** { *; }
-
-# 保留API接口
--keep interface com.enlightenment.ai.data.remote.api.** { *; }
-
-# Gson
--keepattributes Signature
--keepattributes *Annotation*
--keep class sun.misc.Unsafe { *; }
-
-# Retrofit
--keepattributes RuntimeVisibleAnnotations
--keepclassmembers,allowshrinking,allowobfuscation interface * {
-    @retrofit2.http.* <methods>;
-}
-```
+### 4.3 产物与配置
+- 配置与密钥：12-Factor（环境变量/密钥管理），严禁硬编码
+- 构建产物：容器镜像 + Helm/Manifests + SBOM
 
 ### 4.4 发布材料准备
 ```markdown
-## 应用商店材料
-- [ ] 应用图标 (512x512)
-- [ ] 功能图 (1024x500)
-- [ ] 截图 (手机5张+平板2张)
-- [ ] 应用描述 (简短+详细)
-- [ ] 更新说明
-- [ ] 隐私政策链接
-- [ ] 年龄分级
+## 对外材料
+- 变更日志（Changelog）
+- 公开公告（如适用）
 
 ## 内部材料
-- [ ] 发布说明文档
-- [ ] 测试报告
-- [ ] 已知问题列表
-- [ ] 回滚方案
+- 发布说明（范围/影响/风险/回滚）
+- 测试与验收报告
+- 运行手册/应急预案
 ```
 
 ## 5. 灰度发布
@@ -221,16 +167,8 @@ K8s Deployment 使用分批/金丝雀/蓝绿发布；按流量或实例比例推
 - 业务关键指标（转化、留存、活跃）
 
 ### 5.3 灰度控制
-```kotlin
-// 远程配置灰度开关
-class RemoteConfig {
-    fun isFeatureEnabled(feature: String, userId: String): Boolean {
-        val rolloutPercentage = getFeatureRollout(feature)
-        val userBucket = userId.hashCode() % 100
-        return userBucket < rolloutPercentage
-    }
-}
-```
+- 网关/服务网格权重路由（Istio/Traefik/Nginx Ingress）逐步放量
+- 特性开关（后端/前端）按用户/租户/比例控制
 
 ## 6. 全量发布
 
@@ -247,31 +185,11 @@ class RemoteConfig {
 
 ### 6.3 发布通知
 ```markdown
-## 发布通知模板
+主题：v1.2.0 生产发布完成（服务/组件清单）
 
-**主题**: AI启蒙时光 v1.2.0 已发布
-
-各位同事：
-
-AI启蒙时光 v1.2.0 已于 2024-01-15 15:00 正式发布。
-
-**主要更新**：
-1. 优化智能对话体验
-2. 新增10个故事主题
-3. 修复已知问题
-
-**发布渠道**：
-- Google Play：已上线
-- 华为应用市场：审核中
-- 其他商店：陆续上线
-
-**注意事项**：
-- 请关注用户反馈
-- 如有问题及时上报
-- 保持手机畅通
-
-技术支持：张三 (13800138000)
-产品负责：李四 (13900139000)
+更新内容：主要功能/修复摘要 + 链接（变更日志、看板）
+监控与回滚：关键指标链接（Grafana/APM/Logs）、回滚指令与条件
+责任人：技术/产品/值班信息
 ```
 
 ## 7. 发布监控
@@ -283,27 +201,21 @@ AI启蒙时光 v1.2.0 已于 2024-01-15 15:00 正式发布。
 
 ### 7.2 监控仪表板
 ```markdown
-## 发布后24小时监控
+## 发布后24小时监控（示例）
 
-### 崩溃监控
-- 崩溃率：0.08% ✅ (目标<0.1%)
-- 影响用户：1,234
-- 主要崩溃：NullPointerException in StoryActivity
+### 服务稳定性
+- 错误率：< 0.5%
+- P95 延迟：< 200ms（核心接口）
+- 可用性（SLO）：99.9%
 
-### 性能监控
-- 启动时间：2.3s ✅
-- 内存使用：132MB ✅
-- 网络成功率：98.5% ✅
-
-### 用户反馈
-- Play Store评分：4.3 ✅
-- 负面评论：23条
-- 主要问题：加载慢、闪退
+### 性能与资源
+- 吞吐：RPS/QPS
+- CPU/内存/连接池占用
+- 缓存命中率
 
 ### 业务指标
-- DAU：45,678 (+5%)
-- 使用时长：18分钟 (+10%)
-- 付费转化：2.3% (+0.5%)
+- 核心转化/完成率
+- 活跃/留存
 ```
 
 ## 8. 发布总结
@@ -334,39 +246,27 @@ AI启蒙时光 v1.2.0 已于 2024-01-15 15:00 正式发布。
 
 ### 8.2 发布报告模板
 ```markdown
-# v1.2.0 发布总结报告
+# v1.2.0 发布总结报告（Web）
 
 ## 发布概况
 - 版本号：1.2.0
-- 发布日期：2024-01-15
+- 发布日期：2025-01-15
 - 发布范围：全量用户
-- 影响用户：100万+
 
 ## 关键指标
 | 指标 | 目标 | 实际 | 结果 |
 |------|------|------|------|
-| 崩溃率 | <0.1% | 0.08% | ✅ |
-| 启动时间 | <3s | 2.3s | ✅ |
-| 用户评分 | >4.0 | 4.3 | ✅ |
+| 错误率 | <0.5% | 0.3% | ✅ |
+| P95 延迟 | <200ms | 180ms | ✅ |
+| 可用性 | 99.9% | 99.95% | ✅ |
 
-## 主要问题
-1. **问题**：部分用户反馈加载慢
-   **原因**：CDN节点问题
-   **解决**：优化CDN配置
+## 主要问题与解决
+1. CDN 边缘节点异常 → 切换回源并调整缓存策略
+2. 后端连接池耗尽 → 增加池大小并优化超时与重试
 
-2. **问题**：StoryActivity偶现崩溃
-   **原因**：并发访问问题
-   **解决**：已hotfix修复
-
-## 经验教训
-1. 灰度发布发现问题及时
-2. 监控系统运行良好
-3. 需要加强性能测试
-
-## 下版本改进
-1. 增加自动化测试覆盖
-2. 优化发布流程文档
-3. 建立快速响应机制
+## 经验教训与改进
+- 提前压测关键路径，完善容量计划
+- 增强可观测性告警阈值与分级
 ```
 
 ## 9. 紧急回滚

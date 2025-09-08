@@ -78,10 +78,46 @@
 - 内容：流式/非流式一致性、finish_reason 正确。
 
 ## 7. FE 集成建议
+- 选用方案A（卡片 + 底部导航），儿童友好且命中率高。
 - 流式：EventSource/Fetch+ReadableStream；错误兜底与重连指数退避。
 - 非流式：超时与取消（AbortController）。
 - 统一错误体（code/message/hint）与“已降级”提示。
 - 边界：多段消息合并、Markdown 渲染（安全）。
+
+### 7.1 前端信息架构（方案A）
+```
+[ 顶部栏  Kids AI ]
+------------------------------------------
+|  今日推荐                                |
+|  ┌────────────┐  ┌────────────┐         |
+|  |  知识卡 1  |  |  知识卡 2  |         |
+|  | [图片占位] |  | [图片占位] |         |
+|  └────────────┘  └────────────┘         |
+|  ┌────────────────────────────────────┐  |
+|  |  今日故事  (三段，第二段含动作)     |  |
+|  |  标题：红色小车去散步               |  |
+|  |  [▶ 播放]   [下一条]   [❤ 收藏]     |  |
+|  └────────────────────────────────────┘  |
+------------------------------------------
+[底部导航] 首页 | Chat | 微课 | 家长
+```
+
+路由建议：
+- `/` 首页（今日推荐，快速入口）
+- `/chat` Chat（SSE 流式对话：增量渲染、停止/重试）
+- `/lesson` 今日微课（2卡+1故事+1亲情+1逻辑，一键点读/播放）
+- `/parent` 家长中心（时长/正确率/亲情打卡，TTS/夜间开关）
+- `/safety` 安全检查（文本重写小工具）
+
+组件建议：
+- 卡片（标题/图片占位/点读按钮/完成打卡）
+- 故事面板（段落流式/操作控件：播放/下一条/收藏）
+- SSE 客户端封装（断线退避重连、取消）
+- 底部导航（固定，48px 触达区，图标+文案）
+
+可访问性与触控：
+- 触达 ≥ 48px，间距 ≥ 16px，焦点可见，文案对比度 AA
+- 图片提供替代文本（生成式图片以语义说明）
 
 ## 8. 运行与观测
 - 关键指标：
@@ -94,14 +130,24 @@
 ## 9. 目录与关键类（实现建议）
 ```
 app/
-├── presentation/api/v1/ai.py          # /api/v1/ai/chat
-├── presentation/api/main.py           # FastAPI app
-├── application/use_cases/chat_completion.py
-├── domain/ai.py                       # 配置/请求响应模型
+├── presentation/
+│   ├── api/main.py                # FastAPI app / 中间件（Trace-Id/日志）
+│   ├── api/__init__.py            # 挂载 v1 + /metrics + /ready
+│   ├── api/error_mapper.py        # 错误映射（4xx/429/5xx/timeout）
+│   ├── api/metrics.py             # /metrics（Prom 风格）
+│   ├── api/ready.py               # /ready（就绪，breaker 状态）
+│   └── api/v1/
+│       ├── ai.py                  # /api/v1/ai/chat（SSE/非流）
+│       ├── lesson.py              # /api/v1/lesson/today
+│       └── safety.py              # /api/v1/safety/inspect
+├── application/use_cases/
+│   ├── chat_completion.py         # Chat 编排
+│   └── lesson_plan.py             # 日常微课规则（2卡+1故+1亲+1逻辑）
+├── domain/ai.py                   # LLM 请求/响应模型（对齐OpenAI）
 └── infrastructure/ai/
-    ├── clients.py                     # OpenAICompatibleClient + FailoverLLMRouter + CircuitBreaker
-    ├── errors.py                      # 统一异常
-    └── settings.py                    # Provider 加载与校验
+    ├── clients.py                 # OpenAICompatibleClient + FailoverLLMRouter + CircuitBreaker
+    ├── errors.py                  # 统一异常
+    └── settings.py                # Provider 加载与校验
 ```
 
 ## 10. 演进与扩展

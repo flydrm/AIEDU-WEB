@@ -34,7 +34,14 @@ def create_app() -> FastAPI:
 
     # initialize minimal router for DI (can be injected per request later)
     providers = load_providers()
-    app.state.llm_router = FailoverLLMRouter(providers) if providers else None
+    import os
+    br_fail = int(os.environ.get("AI_BREAKER_FAILURES", "3"))
+    br_cool = int(os.environ.get("AI_BREAKER_COOLDOWN", "30"))
+    app.state.llm_router = (
+        FailoverLLMRouter(providers, breaker_failures=br_fail, breaker_cooldown=br_cool)
+        if providers
+        else None
+    )
     app.state.chat_uc = (
         ChatCompletionUseCase(app.state.llm_router) if app.state.llm_router else None
     )

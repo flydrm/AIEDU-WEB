@@ -58,3 +58,21 @@ cd e2e && npm init -y && npm i -D @playwright/test && npx playwright install
 npx playwright test
 ```
 
+## 运行与容器
+
+### 本地启动
+```bash
+uv run uvicorn app.presentation.api.main:app --host 0.0.0.0 --port 8080 --reload
+```
+
+环境变量（可选）：
+- `AI_PROVIDERS`：JSON 数组，含 `name/base_url/api_key/timeout`
+- `AI_BASE_URL` + `AI_API_KEY`：单 provider 简化配置
+- `AI_BREAKER_FAILURES`/`AI_BREAKER_COOLDOWN`：熔断阈值与冷却
+
+### Docker
+```bash
+docker build -t kids-ai-app:latest .
+docker run -p 8080:8080 -e AI_BASE_URL=... -e AI_API_KEY=... kids-ai-app:latest
+```
+

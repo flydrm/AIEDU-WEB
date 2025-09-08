@@ -125,9 +125,12 @@ class OpenAICompatibleClient:
 
 
 class FailoverLLMRouter:
-    def __init__(self, providers: list[dict[str, Any]]) -> None:
+    def __init__(self, providers: list[dict[str, Any]], *, breaker_failures: int | None = None, breaker_cooldown: int | None = None) -> None:
         self._providers = providers
-        self._breakers = [CircuitBreaker() for _ in providers]
+        self._breakers = [
+            CircuitBreaker(failure_threshold=breaker_failures or 3, cooldown_seconds=breaker_cooldown or 30)
+            for _ in providers
+        ]
 
     async def chat_completions(self, payload: dict[str, Any]) -> dict[str, Any]:
         last_err: Exception | None = None
@@ -149,6 +152,16 @@ class FailoverLLMRouter:
         if last_err:
             raise last_err
         raise ServerError("no providers configured")
+
+    def breaker_states(self) -> list[str]:
+        states: list[str] = []
+        for b in self._breakers:
+            if b._opened_at is None:  # noqa: SLF001
+                states.append("closed")
+            else:
+                # simplistic: treat as open; half-open not tracked separately
+                states.append("open")
+        return states
 
     async def stream_chat_completions(self, payload: dict[str, Any]):
         last_err: Exception | None = None

@@ -22,6 +22,9 @@
 - [11 调试与问题修复](./sop/11-debugging-troubleshooting.md)
 - [12 功能入口快速定位](./sop/12-feature-navigation-guide.md)
 
+### 家长手册
+- [家长使用手册](./docs/parent-guide.md)
+
 ## 导出与资料
 
 - PMO/PM 需求分析（Markdown）：`./docs/requirements-analysis-mvp.md`

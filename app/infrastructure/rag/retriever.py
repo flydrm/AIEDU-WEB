@@ -4,7 +4,7 @@ from collections import Counter
 from math import log, sqrt
 from typing import Any, Iterable
 import asyncio
-from app.infrastructure.ai.clients import EmbeddingsClient
+from app.infrastructure.ai.clients import EmbeddingsClient, RerankerClient
 
 
 def _is_cjk(ch: str) -> bool:
@@ -137,10 +137,11 @@ class HybridRetriever(SimpleRetriever):
     If embeddings provider is configured, it augments scores by cosine over embeddings.
     """
 
-    def __init__(self, docs: list[dict[str, Any]], embed_client: EmbeddingsClient | None = None) -> None:
+    def __init__(self, docs: list[dict[str, Any]], embed_client: EmbeddingsClient | None = None, reranker: RerankerClient | None = None) -> None:
         super().__init__(docs)
         self._embed_client = embed_client
         self._doc_embeds: list[list[float] | None] = [None] * len(docs)
+        self._reranker = reranker
 
     async def _ensure_doc_embeds(self) -> None:
         if not self._embed_client:
@@ -187,5 +188,18 @@ class HybridRetriever(SimpleRetriever):
             sim = cos(qv, self._doc_embeds[idx] or []) * 0.7  # weight embeddings
             rescored.append((item, item.get("score", 0.0) * 0.3 + sim))
         rescored.sort(key=lambda x: x[1], reverse=True)
-        return [it for it, _ in rescored[:top_k]]
+        items = [it for it, _ in rescored[: top_k * 2]]
+        # optional rerank via API
+        if self._reranker:
+            try:
+                payload = {"model": "BAAI/bge-reranker-v2-m3", "query": query, "documents": [i.get("text", "") for i in items]}
+                rr = await self._reranker.rerank(payload)
+                order = rr.get("data") or []
+                # assume list of {index, score}
+                pairs = [(items[e.get("index", 0)], float(e.get("score", 0.0))) for e in order]
+                pairs.sort(key=lambda x: x[1], reverse=True)
+                return [it for it, _ in pairs[:top_k]]
+            except Exception:
+                pass
+        return items[:top_k]
 

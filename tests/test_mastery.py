@@ -4,6 +4,9 @@ from app.presentation.api.main import app
 
 def test_mastery_event_and_summary():
     client = TestClient(app)
+    # reset state
+    from app.presentation.api.main import app as _app
+    _app.state.mastery_service.clear()
     # before any event
     r = client.get("/api/v1/parent/mastery")
     assert r.status_code == 200

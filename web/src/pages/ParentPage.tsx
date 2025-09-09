@@ -5,6 +5,7 @@ export const ParentPage: React.FC = () => {
   const [dark, setDark] = useState(false)
   const [metrics, setMetrics] = useState<string>('')
   const [summary, setSummary] = useState<{count: number; avg_success: number} | null>(null)
+  const [detail, setDetail] = useState<Array<{concept_id: string; success_rate: number; last_days_ago: number}>>([])
 
   useEffect(() => {
     document.documentElement.style.background = dark ? '#111' : '#fff'
@@ -26,8 +27,11 @@ export const ParentPage: React.FC = () => {
       const resp = await fetch('/api/v1/parent/mastery')
       const js = await resp.json()
       setSummary(js)
+      const d = await fetch('/api/v1/parent/mastery/detail')
+      setDetail(await d.json())
     } catch (e) {
       setSummary({ count: 0, avg_success: 0 })
+      setDetail([])
     }
   }
 
@@ -49,6 +53,18 @@ export const ParentPage: React.FC = () => {
       {summary && (
         <div style={{ marginBottom: 8 }}>
           <strong>掌握度</strong>: 条目 {summary.count}，平均正确率 {(summary.avg_success * 100).toFixed(1)}%
+        </div>
+      )}
+      {detail.length > 0 && (
+        <div style={{ margin: '8px 0' }}>
+          <div style={{ fontWeight: 'bold', marginBottom: 4 }}>明细</div>
+          <ul>
+            {detail.map((it) => (
+              <li key={it.concept_id} style={{ fontSize: 13 }}>
+                {it.concept_id}: {(it.success_rate * 100).toFixed(1)}%（{it.last_days_ago}天前）
+              </li>
+            ))}
+          </ul>
         </div>
       )}
       <pre aria-label="metrics" style={{ whiteSpace: 'pre-wrap', fontSize: 12, background: '#f8f8f8', padding: 8, borderRadius: 8 }}>

@@ -53,6 +53,14 @@ RERANK_REQUESTS = Counter(
     registry=REGISTRY,
 )
 
+# Learning events metrics
+LEARNING_EVENTS = Counter(
+    "learning_events_total",
+    "Learning event count",
+    ["type"],
+    registry=REGISTRY,
+)
+
 
 @router.get("/metrics")
 async def metrics(request: Request):
@@ -98,4 +106,8 @@ def record_rerank_success(provider: str) -> None:
 
 def record_rerank_error(provider: str, result: str) -> None:
     RERANK_REQUESTS.labels(provider=provider, result=result).inc()
+
+
+def record_learning_event(event_type: str) -> None:
+    LEARNING_EVENTS.labels(type=event_type).inc()
 

@@ -12,3 +12,12 @@ async def get_mastery_summary():
         return {"count": 0, "avg_success": 0.0}
     return svc.summary()
 
+
+@router.get("/mastery/detail")
+async def get_mastery_detail():
+    from app.presentation.api.main import app as _app
+    svc = getattr(_app.state, "mastery_service", None)
+    if not svc:
+        return []
+    return svc.detail()
+

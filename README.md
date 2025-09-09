@@ -26,6 +26,7 @@
 
 - PMO/PM 需求分析（Markdown）：`./docs/requirements-analysis-mvp.md`
 - PMO/PM 需求分析（PDF）：`./docs/requirements-analysis-mvp.pdf`
+- 每周报告（PDF）：`./docs/weekly-report.pdf`
 
 ### 一键导出 PDF（需要 Node 环境）
 
@@ -41,6 +42,17 @@ npm --prefix tools run pdf
 ```
 
 GitHub Actions（手动触发）：`.github/workflows/export-pdf.yml`
+
+### 每周报告导出（CSV/PDF）
+
+```bash
+# CSV（后端接口）
+curl -sS http://localhost:8000/api/v1/parent/mastery/weekly.csv -o docs/weekly.csv
+
+# PDF（工具脚本，需后端已启动）
+npm --prefix tools install
+REPORT_BASE_URL=http://localhost:8000 npm --prefix tools run weekly
+```
 
 ## 测试运行
 

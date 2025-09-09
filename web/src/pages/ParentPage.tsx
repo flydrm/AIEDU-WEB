@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { Sparkline } from './Sparkline'
 
 export const ParentPage: React.FC = () => {
   const [tts, setTts] = useState(false)
@@ -6,6 +7,7 @@ export const ParentPage: React.FC = () => {
   const [metrics, setMetrics] = useState<string>('')
   const [summary, setSummary] = useState<{count: number; avg_success: number} | null>(null)
   const [detail, setDetail] = useState<Array<{concept_id: string; success_rate: number; last_days_ago: number}>>([])
+  const [series, setSeries] = useState<Array<{date: string; success_rate: number; count: number}>>([])
 
   useEffect(() => {
     document.documentElement.style.background = dark ? '#111' : '#fff'
@@ -29,9 +31,12 @@ export const ParentPage: React.FC = () => {
       setSummary(js)
       const d = await fetch('/api/v1/parent/mastery/detail')
       setDetail(await d.json())
+      const s = await fetch('/api/v1/parent/mastery/timeseries?days=7')
+      setSeries(await s.json())
     } catch (e) {
       setSummary({ count: 0, avg_success: 0 })
       setDetail([])
+      setSeries([])
     }
   }
 
@@ -65,6 +70,12 @@ export const ParentPage: React.FC = () => {
               </li>
             ))}
           </ul>
+        </div>
+      )}
+      {series.length > 0 && (
+        <div style={{ margin: '8px 0' }}>
+          <div style={{ fontWeight: 'bold', marginBottom: 4 }}>最近7天正确率</div>
+          <Sparkline data={series.map(s => s.success_rate)} />
         </div>
       )}
       <pre aria-label="metrics" style={{ whiteSpace: 'pre-wrap', fontSize: 12, background: '#f8f8f8', padding: 8, borderRadius: 8 }}>

@@ -31,3 +31,23 @@ async def post_lesson_event(concept_id: str, success: bool):
     rec = svc.update(concept_id, success)
     return {"concept_id": rec.concept_id, "success_rate": rec.success_rate, "last_days_ago": rec.last_days_ago}
 
+
+@router.post("/event/start")
+async def post_lesson_start(concept_id: str):
+    from app.presentation.api.main import app as _app
+    svc = getattr(_app.state, "mastery_service", None)
+    if not svc:
+        raise HTTPException(status_code=500, detail={"code": "NO_MASTERY", "message": "mastery service not available"})
+    svc.record_start(concept_id)
+    return {"ok": True}
+
+
+@router.post("/event/help")
+async def post_lesson_help(concept_id: str):
+    from app.presentation.api.main import app as _app
+    svc = getattr(_app.state, "mastery_service", None)
+    if not svc:
+        raise HTTPException(status_code=500, detail={"code": "NO_MASTERY", "message": "mastery service not available"})
+    svc.record_help(concept_id)
+    return {"ok": True}
+

@@ -21,3 +21,12 @@ async def get_mastery_detail():
         return []
     return svc.detail()
 
+
+@router.get("/mastery/timeseries")
+async def get_mastery_timeseries(days: int = 7):
+    from app.presentation.api.main import app as _app
+    svc = getattr(_app.state, "mastery_service", None)
+    if not svc:
+        return []
+    return svc.timeseries(days)
+

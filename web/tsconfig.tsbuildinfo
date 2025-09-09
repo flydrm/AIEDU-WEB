@@ -1,1 +1,0 @@
-{"root":["./src/main.tsx","./src/lib/sse.ts","./src/pages/Charts.tsx","./src/pages/ChatPage.tsx","./src/pages/HomePage.tsx","./src/pages/LessonPage.tsx","./src/pages/ParentPage.tsx","./src/pages/SafetyPage.tsx","./src/pages/Sparkline.tsx","./src/ui/AppLayout.tsx"],"version":"5.9.2"}

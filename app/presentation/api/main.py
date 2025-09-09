@@ -119,8 +119,12 @@ def create_app() -> FastAPI:
             app.state.kids_dataset = json.load(f)
     except Exception:
         app.state.kids_dataset = {"knowledge_cards": [], "story_prompts": []}
-    # mastery service (in-memory)
-    app.state.mastery_service = MasteryService()
+    # mastery service (file-backed persistence, simple JSON)
+    app.state.mastery_service = MasteryService(storage_path="data/mastery.json")
+    try:
+        app.state.mastery_service.load()
+    except Exception:
+        pass
     return app
 
 

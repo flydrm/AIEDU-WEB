@@ -4,12 +4,17 @@ from typing import Dict, List, Optional
 from app.domain.learning import MasteryRecord
 from app.presentation.api.metrics import record_learning_event
 from datetime import datetime, timezone, timedelta
+from pathlib import Path
+import json
+import threading
 
 
 class MasteryService:
-    def __init__(self) -> None:
+    def __init__(self, storage_path: Optional[str] = None) -> None:
         self._store: Dict[str, MasteryRecord] = {}
         self._events: List[Dict[str, Optional[str]]] = []
+        self._path: Optional[Path] = Path(storage_path) if storage_path else None
+        self._lock = threading.Lock()
 
     def get_all(self) -> List[MasteryRecord]:
         return list(self._store.values())
@@ -17,6 +22,7 @@ class MasteryService:
     def clear(self) -> None:
         self._store.clear()
         self._events.clear()
+        self._save_safe()
 
     def _today(self) -> str:
         return datetime.now(timezone.utc).date().isoformat()
@@ -36,11 +42,13 @@ class MasteryService:
             "type": "complete",
             "success": "1" if success else "0",
         })
+        self._save_safe()
         return rec
 
     def elapse_days(self, days: int = 1) -> None:
         for r in self._store.values():
             r.last_days_ago += max(0, days)
+        self._save_safe()
 
     def summary(self) -> Dict[str, float]:
         if not self._store:
@@ -62,6 +70,7 @@ class MasteryService:
             "type": "start",
             "success": None,
         })
+        self._save_safe()
 
     def record_help(self, concept_id: str) -> None:
         record_learning_event("help")
@@ -71,6 +80,7 @@ class MasteryService:
             "type": "help",
             "success": None,
         })
+        self._save_safe()
 
     def timeseries(self, days: int = 7) -> List[Dict[str, float]]:
         if days <= 0:
@@ -85,3 +95,39 @@ class MasteryService:
             rate = (succ / cnt) if cnt else 0.0
             series.append({"date": d, "count": cnt, "success_rate": round(rate, 3)})
         return series
+
+    # -------------------- Persistence --------------------
+    def load(self) -> None:
+        if not self._path:
+            return
+        try:
+            if self._path.exists():
+                with self._path.open("r", encoding="utf-8") as f:
+                    data = json.load(f)
+                self._store = {
+                    k: MasteryRecord(concept_id=k, success_rate=float(v.get("success_rate", 0.5)), last_days_ago=int(v.get("last_days_ago", 7)))
+                    for k, v in (data.get("store") or {}).items()
+                }
+                self._events = list(data.get("events") or [])
+        except Exception:
+            # fail open: keep in-memory defaults
+            self._store = self._store or {}
+            self._events = self._events or []
+
+    def _save_safe(self) -> None:
+        if not self._path:
+            return
+        try:
+            self._path.parent.mkdir(parents=True, exist_ok=True)
+            payload = {
+                "store": {rid: {"success_rate": rec.success_rate, "last_days_ago": rec.last_days_ago} for rid, rec in self._store.items()},
+                "events": self._events[-1000:],  # cap length to avoid unbounded growth
+            }
+            tmp = self._path.with_suffix(self._path.suffix + ".tmp")
+            with self._lock:
+                with tmp.open("w", encoding="utf-8") as f:
+                    json.dump(payload, f, ensure_ascii=False)
+                tmp.replace(self._path)
+        except Exception:
+            # swallow persistence errors to avoid impacting UX
+            pass

@@ -3,7 +3,8 @@
   "private": true,
   "scripts": {
     "pdf": "node md2pdf.js ../docs/requirements-analysis-mvp.md ../docs/requirements-analysis-mvp.pdf",
-    "weekly": "node weekly-report.js"
+    "weekly": "node weekly-report.js",
+    "parent": "node md2pdf.js ../docs/parent-guide.md ../docs/parent-guide.pdf"
   },
   "dependencies": {
     "marked": "^12.0.2",

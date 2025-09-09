@@ -57,6 +57,12 @@ npm --prefix tools install
 REPORT_BASE_URL=http://localhost:8000 npm --prefix tools run weekly
 ```
 
+### 家长手册导出（PDF）
+
+```bash
+npm --prefix tools run parent
+```
+
 ## 测试运行
 
 ### 单元/集成（pytest）

@@ -25,15 +25,21 @@
 - RAG
   - 提问“红色/勇敢”等关键词时，回答包含与数据集匹配的知识点片段
 
+#### 5. 家长看板可视化
+- 趋势图（Sparkline）：显示 7 日正确率曲线
+- 柱状图：显示 7 日完成次数
+- 热力图：按概念正确率着色
+- 导出：`/api/v1/parent/mastery/weekly.csv` 返回 csv；工具 `npm --prefix tools run weekly` 生成 PDF
+
 #### 4. 响应式与 a11y
 - 断点：375/768/1280 下底部导航不遮挡内容
 - a11y：输入框/按钮/链接具名（通过 getByRole / getByLabel）；可键盘操作
 
-#### 5. 自动化
+#### 6. 自动化
 - 单测/集成测：`pytest -q`（含 UUID Trace-Id 与 /metrics）
 - 前端构建：`npm --prefix web run build`
 - E2E（烟雾）：`E2E_BASE_URL=http://localhost:5173 npx playwright test`
 
-#### 6. 通过准则
+#### 7. 通过准则
 - 功能路径通过；指标可观测；日志有 Trace-Id；无 P0/P1 线上阻断问题。
 

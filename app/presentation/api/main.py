@@ -15,6 +15,7 @@ from app.infrastructure.ai.clients import FailoverLLMRouter
 from app.application.use_cases.chat_completion import ChatCompletionUseCase
 from app.infrastructure.rag.retriever import SimpleRetriever, HybridRetriever
 from app.infrastructure.ai.clients import EmbeddingsClient
+from app.application.services.mastery import MasteryService
 import json
 import time
 import uuid
@@ -116,6 +117,8 @@ def create_app() -> FastAPI:
             app.state.kids_dataset = json.load(f)
     except Exception:
         app.state.kids_dataset = {"knowledge_cards": [], "story_prompts": []}
+    # mastery service (in-memory)
+    app.state.mastery_service = MasteryService()
     return app
 
 

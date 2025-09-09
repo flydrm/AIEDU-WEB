@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Sparkline } from './Sparkline'
+import { Bar, Heatmap } from './Charts'
 
 export const ParentPage: React.FC = () => {
   const [tts, setTts] = useState(false)
@@ -60,6 +61,15 @@ export const ParentPage: React.FC = () => {
           <strong>掌握度</strong>: 条目 {summary.count}，平均正确率 {(summary.avg_success * 100).toFixed(1)}%
         </div>
       )}
+      {series.length > 0 && (
+        <div style={{ margin: '8px 0' }}>
+          <div style={{ fontWeight: 'bold', marginBottom: 4 }}>最近7天正确率</div>
+          <Sparkline data={series.map(s => s.success_rate)} />
+          <div style={{ marginTop: 6 }}>
+            <Bar data={series.map(s => s.count)} />
+          </div>
+        </div>
+      )}
       {detail.length > 0 && (
         <div style={{ margin: '8px 0' }}>
           <div style={{ fontWeight: 'bold', marginBottom: 4 }}>明细</div>
@@ -70,12 +80,9 @@ export const ParentPage: React.FC = () => {
               </li>
             ))}
           </ul>
-        </div>
-      )}
-      {series.length > 0 && (
-        <div style={{ margin: '8px 0' }}>
-          <div style={{ fontWeight: 'bold', marginBottom: 4 }}>最近7天正确率</div>
-          <Sparkline data={series.map(s => s.success_rate)} />
+          <div style={{ marginTop: 6 }}>
+            <Heatmap data={detail.map(d => d.success_rate)} />
+          </div>
         </div>
       )}
       <pre aria-label="metrics" style={{ whiteSpace: 'pre-wrap', fontSize: 12, background: '#f8f8f8', padding: 8, borderRadius: 8 }}>

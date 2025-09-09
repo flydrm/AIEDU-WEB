@@ -1,12 +1,12 @@
 {
-  "name": "ai-edu-tools",
+  "name": "tools",
   "private": true,
   "scripts": {
-    "postinstall": "node -e \"console.log('tools ready')\"",
-    "pdf": "node ./md2pdf.js ../docs/requirements-analysis-mvp.md ../docs/requirements-analysis-mvp.pdf"
+    "pdf": "node md2pdf.js ../docs/requirements-analysis-mvp.md ../docs/requirements-analysis-mvp.pdf",
+    "weekly": "node weekly-report.js"
   },
   "dependencies": {
-    "marked": "^16.2.1",
-    "puppeteer": "^24.19.0"
+    "marked": "^12.0.2",
+    "puppeteer": "^22.12.1"
   }
 }
